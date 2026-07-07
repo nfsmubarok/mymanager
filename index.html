@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マネージャー Dashboard - Money</title>
+    <style>
+        /* === TEMA AESTHETIC JEPANG (ZEN) === */
+        :root {
+            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
+            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* === SIDEBAR === */
+        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; }
+        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
+        .menu-group { margin-bottom: 24px; }
+        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
+        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
+        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
+
+        /* === MAIN CONTENT & CARDS === */
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        /* === AESTHETIC BUTTONS === */
+        .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
+        .btn-add:active { transform: translateY(0); }
+        .btn-small { background-color: var(--bg-rice); color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-small:hover { background-color: var(--border-color); }
+        
+        /* === AESTHETIC DROPDOWNS (SELECT) === */
+        select { 
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .wallet-select { border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 28px 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-dark); background-color: var(--bg-rice); outline: none; }
+        .wallet-select:hover { border-color: var(--matcha-green); }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .card { background-color: var(--bg-white); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); position: relative; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.1; }
+        .card.income::before { background-color: var(--matcha-green); }
+        .card.expense::before { background-color: var(--sakura-pink); }
+        .card.balance::before { background-color: var(--ocean-blue); }
+        .card-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .card-amount { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+        .text-green { color: var(--matcha-green); }
+        .text-red { color: var(--sakura-pink); }
+        
+        /* === KONTEN BAWAH === */
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .box { background-color: var(--bg-white); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* Stats & Wallets Styling */
+        .stat-item { margin-bottom: 15px; }
+        .stat-bar-bg { width: 100%; height: 8px; background: var(--bg-rice); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .wallet-sub-box { border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fafaf9; transition: all 0.2s; }
+        .wallet-sub-box:hover { border-color: var(--matcha-green); transform: translateX(2px); }
+        .transaction-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--bg-rice); }
+        .transaction-item:last-child { border-bottom: none; }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 30px 0; font-size: 14px; }
+
+        /* === OVERLAY / MODAL CSS === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h2 { font-size: 20px; color: var(--text-dark); }
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+        .close-btn:hover { background: var(--sakura-pink); color: white; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark);}
+        .form-input:focus { border-color: var(--matcha-green); box-shadow: 0 0 0 3px rgba(143, 151, 121, 0.1); background-color: var(--bg-white);}
+        
+        .radio-group { display: flex; gap: 10px; }
+        .radio-btn { flex: 1; text-align: center; }
+        .radio-btn input[type="radio"] { display: none; }
+        .radio-btn label { display: block; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; margin: 0;}
+        .radio-btn input[type="radio"]:checked + label { background-color: var(--matcha-green); color: white; border-color: var(--matcha-green); }
+        .radio-btn.expense input[type="radio"]:checked + label { background-color: var(--sakura-pink); border-color: var(--sakura-pink); }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;}
+        .btn-cancel:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">マネージャー</div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Main Dashboard</div>
+            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+        </div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Leisure & Notes</div>
+            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Money Manager</h1>
+                <p>こんにちは (Konnichiwa), atur keuanganmu dengan tenang.</p>
+            </div>
+            <button class="btn-add" onclick="openModal('transactionModal')">+ Add Transaction</button>
+        </div>
+
+        <div class="summary-grid">
+            <div class="card balance">
+                <div class="card-title">Current Balance
+                    <select id="main-wallet-select" class="wallet-select" onchange="updateCurrentBalanceDisplay()"></select>
+                </div>
+                <div class="card-amount" id="display-current-balance">Rp 0</div>
+                <p style="font-size: 12px; color: var(--text-muted);">Saldo dompet terpilih</p>
+            </div>
+            <div class="card income">
+                <div class="card-title">Total Income</div>
+                <div class="card-amount text-green" id="display-total-income">Rp 0</div>
+                <p style="font-size: 12px; color: var(--text-muted);">This month</p>
+            </div>
+            <div class="card expense">
+                <div class="card-title">Total Expenses</div>
+                <div class="card-amount text-red" id="display-total-expense">Rp 0</div>
+                <p style="font-size: 12px; color: var(--text-muted);">This month</p>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Savings</div>
+                <div class="card-amount text-blue" id="display-total-savings">Rp 0</div>
+                <p style="font-size: 12px; color: var(--text-muted);">Across all wallets</p>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div>
+                <div class="box">
+                    <div class="box-header">
+                        <h3>Recent Transactions</h3>
+                        <button class="btn-small" onclick="openModal('allTxModal')">See All</button>
+                    </div>
+                    <div id="recent-tx-list"></div>
+                </div>
+
+                <div class="box">
+                    <div class="box-header"><h3>Statistics (Expenses This Month)</h3></div>
+                    <div id="stats-list"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="box">
+                    <div class="box-header">
+                        <h3>Wallets</h3>
+                        <button class="btn-small" onclick="openModal('walletModal')">+ Add</button>
+                    </div>
+                    <div id="wallets-list"></div>
+                </div>
+
+                <div class="box">
+                    <h3>Transfer Wallets</h3>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px; margin-bottom: 15px;">Pindah saldo antar rekening/dompet.</p>
+                    <button class="btn-add" style="width: 100%; background: var(--ocean-blue);" onclick="openModal('transferModal')">🔄 Make a Transfer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="transactionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Add Transaction</h2><button class="close-btn" onclick="closeModal('transactionModal')">✕</button></div>
+            <div class="form-group"><label>Type</label>
+                <div class="radio-group">
+                    <div class="radio-btn"><input type="radio" id="type-income" name="tx-type" value="income" checked><label for="type-income">Income</label></div>
+                    <div class="radio-btn expense"><input type="radio" id="type-expense" name="tx-type" value="expense"><label for="type-expense">Expense</label></div>
+                </div>
+            </div>
+            <div class="form-group"><label>Description</label><input type="text" id="tx-desc" class="form-input" placeholder="e.g., Makan siang"></div>
+            <div class="form-group"><label>Amount (Rp)</label><input type="number" id="tx-amount" class="form-input" placeholder="0"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label>Date</label><input type="date" id="tx-date" class="form-input"></div>
+                <div class="form-group"><label>Category</label>
+                    <select id="tx-category" class="form-input">
+                        <option>Food & Drinks</option><option>Transport</option><option>Salary</option>
+                        <option>Entertainment</option><option>Shopping</option><option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>Wallet</label><select id="tx-wallet" class="form-input"></select></div>
+            <div class="form-group"><label>Note (Optional)</label><input type="text" id="tx-note" class="form-input" placeholder="Additional details..."></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('transactionModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveTransaction()">Save Transaction</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="allTxModal" class="modal-overlay">
+        <div class="modal-content" style="width: 550px;">
+            <div class="modal-header">
+                <h2>All Transactions</h2>
+                <button class="close-btn" onclick="closeModal('allTxModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <select id="filter-month" class="form-input" onchange="renderAllTransactions()">
+                    <option value="all">All Months</option>
+                    <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                    <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                    <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                    <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                </select>
+            </div>
+            <div id="all-tx-list" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
+        </div>
+    </div>
+
+    <div id="walletModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Add New Wallet</h2><button class="close-btn" onclick="closeModal('walletModal')">✕</button></div>
+            <div class="form-group"><label>Wallet Name</label><input type="text" id="wallet-name" class="form-input" placeholder="e.g., Bank Jago"></div>
+            <div class="form-group"><label>Initial Balance (Rp)</label><input type="number" id="wallet-balance" class="form-input" placeholder="0"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('walletModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveWallet()">Save Wallet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="transferModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Transfer Balance</h2><button class="close-btn" onclick="closeModal('transferModal')">✕</button></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label>From</label><select id="transfer-from" class="form-input"></select></div>
+                <div class="form-group"><label>To</label><select id="transfer-to" class="form-input"></select></div>
+            </div>
+            <div class="form-group"><label>Amount (Rp)</label><input type="number" id="transfer-amount" class="form-input" placeholder="0"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="transfer-date" class="form-input"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveTransfer()">Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. INISIALISASI DATA (Ambil dari LocalStorage atau pakai default lu)
+        let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [
+            { id: 'w1', name: 'BTN', balance: 5000000 },
+            { id: 'w2', name: 'BSI', balance: 2500000 },
+            { id: 'w3', name: 'Dompet', balance: 500000 }
+        ];
+        
+        let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
+        
+        // Helper: Format Rupiah
+        function formatRp(angka) {
+            return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Helper: Dapet Icon buat kategori
+        function getIcon(category) {
+            const icons = { "Food & Drinks": "🍜", "Transport": "🚗", "Salary": "💵", "Entertainment": "🎮", "Shopping": "🛍️", "Transfer": "🔄" };
+            return icons[category] || "📝";
+        }
+
+        // 2. FUNGSI UPDATE UI UTAMA
+        function updateDashboard() {
+            // Update Dropdown List Wallets (di atas, di form tx, di form transfer)
+            const mainSelect = document.getElementById('main-wallet-select');
+            const txWallet = document.getElementById('tx-wallet');
+            const tfFrom = document.getElementById('transfer-from');
+            const tfTo = document.getElementById('transfer-to');
+            
+            // Simpan value yg lagi dipilih biar gak ke-reset
+            let currentMainVal = mainSelect.value;
+            
+            mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
+            wallets.forEach(w => {
+                let opt = `<option value="${w.id}">${w.name}</option>`;
+                mainSelect.innerHTML += opt; txWallet.innerHTML += opt; tfFrom.innerHTML += opt; tfTo.innerHTML += opt;
+            });
+
+            if (currentMainVal && wallets.find(w => w.id === currentMainVal)) {
+                mainSelect.value = currentMainVal;
+            }
+
+            // Hitung Data Bulan Ini
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            let totalIncome = 0;
+            let totalExpense = 0;
+            let totalSavings = 0;
+            let expensesByCategory = {};
+
+            // Hitung Savings (Semua Wallet)
+            wallets.forEach(w => totalSavings += parseInt(w.balance));
+
+            // Filter & Hitung Transaksi
+            // Urutkan dari yang terbaru
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            transactions.forEach(tx => {
+                let txDate = new Date(tx.date);
+                if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
+                    if (tx.type === 'income') totalIncome += parseInt(tx.amount);
+                    if (tx.type === 'expense') {
+                        totalExpense += parseInt(tx.amount);
+                        // Grouping buat Stats (Khusus Expense)
+                        if (!expensesByCategory[tx.category]) expensesByCategory[tx.category] = 0;
+                        expensesByCategory[tx.category] += parseInt(tx.amount);
+                    }
+                }
+            });
+
+            // Update Angka di Atas
+            updateCurrentBalanceDisplay();
+            document.getElementById('display-total-income').innerText = formatRp(totalIncome);
+            document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
+            document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
+
+            // Render Wallets Box (Kanan Bawah)
+            // Render Wallets Box (Kanan Bawah)
+            const walletsListDiv = document.getElementById('wallets-list');
+            walletsListDiv.innerHTML = '';
+            wallets.forEach(w => {
+                walletsListDiv.innerHTML += `
+                    <div class="wallet-sub-box">
+                        <div>
+                            <p style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${w.name}</p>
+                            <p style="font-weight: bold; font-size: 16px;">${formatRp(w.balance)}</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--matcha-green); color: var(--matcha-green); background-opacity: 0.15; display: flex; align-items:center; justify-content:center;">💳</div>
+                            <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete Wallet">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Render Recent Transactions (Max 6)
+            const recentDiv = document.getElementById('recent-tx-list');
+            recentDiv.innerHTML = '';
+            let recentTxs = transactions.slice(0, 6);
+            if (recentTxs.length === 0) {
+                recentDiv.innerHTML = '<div class="empty-state">📮 No transactions yet</div>';
+            } else {
+                recentTxs.forEach(tx => {
+                    let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
+                    let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
+                    let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
+                    
+                    recentDiv.innerHTML += `
+                        <div class="transaction-item">
+                            <div>
+                                <p style="font-weight: 600; font-size: 14px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
+                                <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${w.name} • ${tx.date}</p>
+                            </div>
+                            <p style="color: ${color}; font-weight: bold; font-size: 14px;">${sign} ${formatRp(tx.amount)}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // Render Statistics Bar Chart
+            const statsDiv = document.getElementById('stats-list');
+            statsDiv.innerHTML = '';
+            let maxExpense = Math.max(...Object.values(expensesByCategory), 0);
+            
+            if (maxExpense === 0) {
+                statsDiv.innerHTML = '<div class="empty-state">No expenses this month. Zen! 🍵</div>';
+            } else {
+                for (let cat in expensesByCategory) {
+                    let amount = expensesByCategory[cat];
+                    let percent = (amount / maxExpense) * 100; // Relative to max for better visual scaling
+                    statsDiv.innerHTML += `
+                        <div class="stat-item">
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+                                <span style="font-weight:600;">${cat}</span> <span class="text-red">${formatRp(amount)}</span>
+                            </div>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: var(--sakura-pink);"></div></div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Simpan ke memory browser
+            localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
+            localStorage.setItem('finzen_tx', JSON.stringify(transactions));
+        }
+
+        function updateCurrentBalanceDisplay() {
+            let selectedId = document.getElementById('main-wallet-select').value;
+            let w = wallets.find(w => w.id === selectedId);
+            document.getElementById('display-current-balance').innerText = w ? formatRp(w.balance) : 'Rp 0';
+        }
+
+        // 3. FUNGSI UNTUK SAVE DATA
+        function saveTransaction() {
+            let type = document.querySelector('input[name="tx-type"]:checked').value;
+            let desc = document.getElementById('tx-desc').value;
+            let amount = parseInt(document.getElementById('tx-amount').value);
+            let date = document.getElementById('tx-date').value;
+            let category = document.getElementById('tx-category').value;
+            let walletId = document.getElementById('tx-wallet').value;
+            let note = document.getElementById('tx-note').value;
+
+            if(!desc || !amount || !date) { alert("Tolong isi Description, Amount, dan Date ya!"); return; }
+
+            // Potong/Tambah saldo Wallet
+            let walletIndex = wallets.findIndex(w => w.id === walletId);
+            if (type === 'expense') {
+                wallets[walletIndex].balance -= amount;
+            } else {
+                wallets[walletIndex].balance += amount;
+            }
+
+            // Simpan Transaksi
+            transactions.push({ id: Date.now(), type, desc, amount, date, category, walletId, note });
+            
+            closeModal('transactionModal');
+            updateDashboard();
+            
+            // Bersihin form
+            document.getElementById('tx-desc').value = '';
+            document.getElementById('tx-amount').value = '';
+        }
+
+        function saveWallet() {
+            let name = document.getElementById('wallet-name').value;
+            let balance = parseInt(document.getElementById('wallet-balance').value);
+            
+            if(!name || isNaN(balance)) { alert("Isi nama dan saldo awalnya!"); return; }
+
+            wallets.push({ id: 'w' + Date.now(), name, balance });
+            closeModal('walletModal');
+            updateDashboard();
+            
+            document.getElementById('wallet-name').value = '';
+            document.getElementById('wallet-balance').value = '';
+        }
+
+        
+
+        function saveTransfer() {
+            let fromId = document.getElementById('transfer-from').value;
+            let toId = document.getElementById('transfer-to').value;
+            let amount = parseInt(document.getElementById('transfer-amount').value);
+            let date = document.getElementById('transfer-date').value;
+
+            if(fromId === toId) { alert("Masa transfer ke dompet yang sama wkwk"); return; }
+            if(!amount || !date) { alert("Isi jumlah dan tanggalnya cuy!"); return; }
+
+            let idxFrom = wallets.findIndex(w => w.id === fromId);
+            let idxTo = wallets.findIndex(w => w.id === toId);
+
+            if(wallets[idxFrom].balance < amount) { alert("Saldo nggak cukup buat transfer!"); return; }
+
+            // Pindah saldo
+            wallets[idxFrom].balance -= amount;
+            wallets[idxTo].balance += amount;
+
+            // Catat sebagai transaksi khusus
+            let wFromName = wallets[idxFrom].name;
+            let wToName = wallets[idxTo].name;
+            transactions.push({ 
+                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wToName}`, 
+                amount, date, category: 'Transfer', walletId: fromId, note: '' 
+            });
+
+            closeModal('transferModal');
+            updateDashboard();
+            
+            document.getElementById('transfer-amount').value = '';
+        }
+
+        // 4. FUNGSI ALL TRANSACTIONS (Modal Baru)
+        function renderAllTransactions() {
+            const listDiv = document.getElementById('all-tx-list');
+            const monthFilter = document.getElementById('filter-month').value;
+            listDiv.innerHTML = '';
+            
+            let filteredTxs = transactions;
+            if (monthFilter !== 'all') {
+                filteredTxs = transactions.filter(tx => new Date(tx.date).getMonth() == monthFilter);
+            }
+
+            if (filteredTxs.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">Kosong nih, gaada transaksi di bulan ini.</div>';
+                return;
+            }
+
+            filteredTxs.forEach(tx => {
+                let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
+                let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
+                let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
+                
+                listDiv.innerHTML += `
+                    <div class="transaction-item" style="padding: 16px 0;">
+                        <div>
+                            <p style="font-weight: 600; font-size: 15px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                <span style="background: var(--bg-rice); padding: 2px 6px; border-radius: 4px;">${w.name}</span> • ${tx.category} • ${tx.date}
+                            </p>
+                        </div>
+                        <p style="color: ${color}; font-weight: bold; font-size: 15px;">${sign} ${formatRp(tx.amount)}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // 5. KONTROL MODAL
+        function openModal(modalId) { 
+            document.getElementById(modalId).style.display = 'flex'; 
+            if(modalId === 'allTxModal') {
+                // Set filter ke bulan saat ini pas modal dibuka
+                document.getElementById('filter-month').value = new Date().getMonth();
+                renderAllTransactions();
+            } else if (modalId === 'transactionModal' || modalId === 'transferModal') {
+                // Set default date ke hari ini
+                document.getElementById('tx-date').valueAsDate = new Date();
+                document.getElementById('transfer-date').valueAsDate = new Date();
+            }
+        }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; } }
+
+        // JALANKAN SAAT WEB DIBUKA
+        window.onload = () => {
+            updateDashboard();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マネージャー Dashboard - Dumpspaces</title>
+    <style>
+        /* === TEMA AESTHETIC JEPANG (ZEN) === */
+        :root {
+            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
+            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* === SIDEBAR === */
+        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;}
+        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
+        .menu-group { margin-bottom: 24px; }
+        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
+        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
+        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
+
+        /* === MAIN CONTENT === */
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
+
+        /* === MASONRY LAYOUT (PINTEREST STYLE) === */
+        .masonry-grid {
+            column-count: 3;
+            column-gap: 24px;
+        }
+        @media (max-width: 1200px) { .masonry-grid { column-count: 2; } }
+        @media (max-width: 768px) { .masonry-grid { column-count: 1; } }
+
+        .dump-card {
+            background-color: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 24px; break-inside: avoid;
+            position: relative; overflow: hidden; transition: 0.2s;
+        }
+        .dump-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--matcha-green); }
+        
+        .dump-header { padding: 16px 20px 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .dump-type-badge { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
+        .type-note { background: rgba(143,151,121,0.15); color: var(--matcha-green); }
+        .type-link { background: rgba(123,144,149,0.15); color: var(--ocean-blue); }
+        .type-image { background: rgba(217,140,140,0.15); color: var(--sakura-pink); }
+        
+        .dump-body { padding: 8px 20px 20px; }
+        .dump-title { font-size: 16px; font-weight: bold; color: var(--text-dark); margin-bottom: 8px; }
+        .dump-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word;}
+        .dump-link { color: var(--ocean-blue); text-decoration: none; font-size: 13px; word-break: break-all; display: flex; align-items: center; gap: 6px; margin-top: 8px;}
+        .dump-link:hover { text-decoration: underline; }
+        
+        .dump-image { width: 100%; height: auto; display: block; border-bottom: 1px solid var(--border-color); }
+        
+        .btn-delete-card { background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0; transition: 0.2s; font-size: 14px;}
+        .dump-card:hover .btn-delete-card { opacity: 0.5; }
+        .btn-delete-card:hover { opacity: 1 !important; color: var(--sakura-pink); }
+
+        .empty-state { column-span: all; text-align: center; color: var(--text-muted); padding: 80px 0; background: var(--bg-white); border-radius: 16px; border: 1px dashed var(--border-color); }
+
+        /* === MODALS === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .close-btn:hover { background: var(--sakura-pink); color: white; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark); }
+        .form-input:focus { border-color: var(--matcha-green); background-color: var(--bg-white); }
+        select.form-input { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; cursor: pointer; }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">マネージャー</div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Main Dashboard</div>
+            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+        </div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Leisure & Notes</div>
+            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Dumpspaces</h1>
+                <p>Dump your thoughts, links, and inspirations here.</p>
+            </div>
+            <button class="btn-add" onclick="openDumpModal()">+ Add Dump</button>
+        </div>
+
+        <div class="masonry-grid" id="dumps-container">
+            <!-- Dump cards will be injected here via JS -->
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODALS -->
+    <!-- ============================================== -->
+
+    <!-- Modal 1: Add Dump -->
+    <div id="dumpModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Dump</h2>
+                <button class="close-btn" onclick="closeModal('dumpModal')">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Type of Dump</label>
+                <select id="dump-type" class="form-input" onchange="toggleDumpFields()">
+                    <option value="Note">📝 Text / Note</option>
+                    <option value="Link">🔗 Web Link</option>
+                    <option value="Image">🖼️ Image (URL)</option>
+                </select>
+            </div>
+
+            <!-- Field: General Title -->
+            <div class="form-group">
+                <label id="label-title">Title (Optional)</label>
+                <input type="text" id="dump-title" class="form-input" placeholder="Give it a title...">
+            </div>
+
+            <!-- Field: Note Content -->
+            <div class="form-group" id="field-note">
+                <label>Note Content</label>
+                <textarea id="dump-content" class="form-input" rows="6" placeholder="Tulis ide, *snippet code*, atau catatan disini..."></textarea>
+            </div>
+
+            <!-- Field: Link URL -->
+            <div class="form-group" id="field-link" style="display: none;">
+                <label>URL / Link</label>
+                <input type="url" id="dump-url" class="form-input" placeholder="https://...">
+            </div>
+
+            <!-- Field: Image URL -->
+            <div class="form-group" id="field-image" style="display: none;">
+                <label>Image Address (URL)</label>
+                <input type="url" id="dump-img-url" class="form-input" placeholder="https://.../image.png">
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">*Pakai URL gambar dari internet dulu ya buat ngemat *Local Storage*.</p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('dumpModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveDump()">Drop it!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Custom Confirm (Smooth Aesthetic) -->
+    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
+            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
+            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus dump ini?</p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ============================================== -->
+    <script>
+        // Setup Data Local Storage
+        let dumps = JSON.parse(localStorage.getItem('finzen_dumps')) || [];
+        
+        // --- RENDER UI ---
+        function renderDumps() {
+            const container = document.getElementById('dumps-container');
+            container.innerHTML = '';
+
+            if (dumps.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size: 24px; display: block; margin-bottom: 10px;">📦</span>
+                        Masih kosong. Mulai buang link, ide, atau gambar lu kesini!
+                    </div>`;
+                return;
+            }
+
+            // Urutin dari yang paling baru
+            dumps.sort((a,b) => b.id - a.id);
+
+            dumps.forEach(dump => {
+                let badgeClass = '';
+                let contentHtml = '';
+                let titleHtml = dump.title ? `<h4 class="dump-title">${dump.title}</h4>` : '';
+                
+                // Format berdasarkan tipe Dump
+                if (dump.type === 'Note') {
+                    badgeClass = 'type-note';
+                    contentHtml = `<p class="dump-text">${dump.content}</p>`;
+                } 
+                else if (dump.type === 'Link') {
+                    badgeClass = 'type-link';
+                    contentHtml = `<a href="${dump.url}" target="_blank" class="dump-link">🔗 Visit Link ↗</a>`;
+                    if(dump.content) contentHtml = `<p class="dump-text" style="margin-bottom:8px;">${dump.content}</p>` + contentHtml;
+                } 
+                else if (dump.type === 'Image') {
+                    badgeClass = 'type-image';
+                    contentHtml = ''; // Gambarnya ditaruh di atas luar box-body biar *full width*
+                }
+
+                // Render Kartu
+                container.innerHTML += `
+                    <div class="dump-card">
+                        ${dump.type === 'Image' ? `<img src="${dump.url}" alt="Dumped Image" class="dump-image" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">` : ''}
+                        
+                        <div class="dump-header">
+                            <span class="dump-type-badge ${badgeClass}">${dump.type}</span>
+                            <button class="btn-delete-card" onclick="triggerDeleteDump(${dump.id})" title="Delete Dump">🗑️</button>
+                        </div>
+                        
+                        <div class="dump-body">
+                            ${titleHtml}
+                            ${contentHtml}
+                            ${dump.type === 'Image' && dump.content ? `<p class="dump-text" style="margin-top:8px;">${dump.content}</p>` : ''}
+                            <p style="font-size: 10px; color: var(--border-color); margin-top: 12px; text-align: right;">${dump.date}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- FORM & MODAL LOGIC ---
+        function toggleDumpFields() {
+            const type = document.getElementById('dump-type').value;
+            document.getElementById('field-note').style.display = 'none';
+            document.getElementById('field-link').style.display = 'none';
+            document.getElementById('field-image').style.display = 'none';
+            
+            document.getElementById('label-title').innerText = "Title (Optional)";
+
+            if (type === 'Note') {
+                document.getElementById('field-note').style.display = 'block';
+            } else if (type === 'Link') {
+                document.getElementById('field-link').style.display = 'block';
+                document.getElementById('field-note').style.display = 'block'; // Buat deskripsi link
+                document.getElementById('label-title').innerText = "Link Title";
+            } else if (type === 'Image') {
+                document.getElementById('field-image').style.display = 'block';
+                document.getElementById('field-note').style.display = 'block'; // Buat caption gambar
+                document.getElementById('label-title').innerText = "Caption / Title (Optional)";
+            }
+        }
+
+        function openDumpModal() {
+            document.getElementById('dump-title').value = '';
+            document.getElementById('dump-content').value = '';
+            document.getElementById('dump-url').value = '';
+            document.getElementById('dump-img-url').value = '';
+            document.getElementById('dump-type').value = 'Note';
+            toggleDumpFields();
+            openModal('dumpModal');
+        }
+
+        function saveDump() {
+            const type = document.getElementById('dump-type').value;
+            const title = document.getElementById('dump-title').value;
+            const content = document.getElementById('dump-content').value;
+            
+            let url = '';
+            if(type === 'Link') url = document.getElementById('dump-url').value;
+            if(type === 'Image') url = document.getElementById('dump-img-url').value;
+
+            // Validasi simpel
+            if(type === 'Note' && !title && !content) { alert("Isi notesnya dong!"); return; }
+            if(type === 'Link' && !url) { alert("URL Linknya jangan kosong!"); return; }
+            if(type === 'Image' && !url) { alert("URL Image-nya jangan kosong!"); return; }
+
+            // Bikin tanggal (buat estetika footer card)
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            const payload = { id: Date.now(), type, title, content, url, date: dateStr };
+
+            dumps.push(payload);
+            localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
+            
+            closeModal('dumpModal');
+            renderDumps();
+        }
+
+        // --- DELETE LOGIC (Pakai Custom Confirm dari code sebelumnya) ---
+        let confirmAction = null; 
+        
+        function customConfirm(message, actionCallback) {
+            document.getElementById('confirm-msg').innerText = message;
+            confirmAction = actionCallback; 
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function executeConfirm() {
+            if(confirmAction) {
+                confirmAction(); 
+                confirmAction = null;
+            }
+            closeModal('confirmModal');
+        }
+
+        function triggerDeleteDump(id) {
+            customConfirm(`Yakin mau ngebuang dump ini selamanya?`, () => {
+                dumps = dumps.filter(d => d.id !== id);
+                localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
+                renderDumps();
+            });
+        }
+
+        // --- BASE MODAL CONTROLS ---
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) { 
+            if (event.target.classList.contains('modal-overlay')) { 
+                event.target.style.display = "none"; 
+            } 
+        }
+
+        // Initial Render
+        window.onload = () => { renderDumps(); };
+    </script>
+</body>
+</html>

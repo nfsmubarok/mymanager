@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マネージャー Dashboard - Schedule</title>
+    <style>
+        /* === TEMA AESTHETIC JEPANG (ZEN) === */
+        :root {
+            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
+            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* === SIDEBAR === */
+        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; }
+        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
+        .menu-group { margin-bottom: 24px; }
+        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
+        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
+        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
+
+        /* === MAIN CONTENT === */
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        /* === BUTTONS & UI === */
+        .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
+        .btn-small { background-color: var(--bg-rice); color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-small:hover { background-color: var(--border-color); }
+        .box { background-color: var(--bg-white); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .content-grid { display: grid; grid-template-columns: 1.8fr 1fr; gap: 24px; }
+        
+        /* Select Dropdown Aesthetic */
+        select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; cursor: pointer; }
+
+        /* === CALENDAR STYLES === */
+        .calendar-header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header-nav h2 { font-size: 18px; color: var(--text-dark); }
+        .nav-btn { background: var(--bg-rice); border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: 0.2s; }
+        .nav-btn:hover { background: var(--border-color); color: var(--text-dark); }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day-name { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding-bottom: 8px; }
+        .day-cell { min-height: 85px; background: var(--bg-rice); border-radius: 8px; padding: 6px; transition: 0.2s; border: 1px solid transparent; display: flex; flex-direction: column; cursor: pointer; }
+        .day-cell:hover { border-color: var(--matcha-green); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .day-cell.today { background: var(--bg-white); border: 1px solid var(--matcha-green); box-shadow: 0 4px 10px rgba(143,151,121,0.1); }
+        .day-cell.muted { opacity: 0.4; pointer-events: none; }
+        .day-number { font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; align-self: flex-end; }
+        .day-cell.today .day-number { color: var(--matcha-green); background: rgba(143,151,121,0.1); padding: 2px 6px; border-radius: 4px;}
+        
+        .event-pill { font-size: 10px; padding: 3px 6px; border-radius: 4px; color: white; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;}
+        
+        /* === TASKS & UPCOMING === */
+        .priority-tag { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tag-high { background: rgba(217,140,140,0.15); color: var(--sakura-pink); }
+        .tag-medium { background: rgba(123,144,149,0.15); color: var(--ocean-blue); }
+        .tag-low { background: rgba(143,151,121,0.15); color: var(--matcha-green); }
+
+        .schedule-item { border-left: 3px solid; padding: 12px 16px; background: #fafaf9; border-radius: 0 12px 12px 0; margin-bottom: 12px; transition: 0.2s; }
+        .schedule-item:hover { transform: translateX(4px); }
+        
+        .task-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bg-rice); transition: 0.2s; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { transform: translateX(2px); }
+        .task-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--matcha-green); margin-top: 2px; }
+        .task-content { flex: 1; }
+        .task-title { font-size: 14px; font-weight: 600; color: var(--text-dark); transition: 0.2s; }
+        .task-item.completed .task-title { text-decoration: line-through; color: var(--text-muted); }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 20px 0; font-size: 13px; }
+
+        /* === MODALS === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .close-btn:hover { background: var(--sakura-pink); color: white; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark); }
+        .form-input:focus { border-color: var(--matcha-green); background-color: var(--bg-white); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">マネージャー</div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Main Dashboard</div>
+            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+        </div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Leisure & Notes</div>
+            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Schedule & Planner</h1>
+                <p>Prioritize your peace of mind.</p>
+            </div>
+            <button class="btn-add" onclick="openModal('scheduleModal')">+ Add Schedule</button>
+        </div>
+
+        <div class="content-grid">
+            <div class="box">
+                <div class="calendar-header-nav">
+                    <h2 id="month-display">Bulan Tahun</h2>
+                    <div>
+                        <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
+                        <button class="nav-btn" onclick="changeMonth(1)">❯</button>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+                    <div class="day-name">Sun</div><div class="day-name">Mon</div><div class="day-name">Tue</div>
+                    <div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div>
+                </div>
+                <div class="calendar-grid" id="calendar-days">
+                    </div>
+            </div>
+
+            <div>
+                <div class="box">
+                    <div class="box-header">
+                        <h3>Today's Schedule</h3>
+                    </div>
+                    <div id="upcoming-list"></div>
+                </div>
+
+                <div class="box">
+                    <div class="box-header">
+                        <h3>Task List</h3>
+                        <button class="btn-small" onclick="openModal('taskModal')">+ Add Task</button>
+                    </div>
+                    <div id="task-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dailyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="daily-modal-title">Schedule</h2>
+                <button class="close-btn" onclick="closeModal('dailyModal')">✕</button>
+            </div>
+            <div id="daily-schedule-list" style="margin-bottom: 20px;">
+                </div>
+            <div class="modal-actions" style="margin-top: 0;">
+                <button class="btn-submit" style="width: 100%;" onclick="openAddFromDaily()">+ Add Schedule Here</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scheduleModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="schedule-modal-title">Add Schedule</h2><button class="close-btn" onclick="closeModal('scheduleModal')">✕</button></div>
+            <div class="form-group"><label>Event Title</label><input type="text" id="sch-title" class="form-input" placeholder="e.g., Meeting Dosen"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label>Date</label><input type="date" id="sch-date" class="form-input"></div>
+                <div class="form-group"><label>Time</label><input type="time" id="sch-time" class="form-input"></div>
+            </div>
+            <div class="form-group"><label>Priority</label>
+                <select id="sch-priority" class="form-input">
+                    <option value="High">High Priority</option>
+                    <option value="Medium" selected>Medium Priority</option>
+                    <option value="Low">Low Priority</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('scheduleModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveSchedule()">Save Event</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="taskModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Add Task</h2><button class="close-btn" onclick="closeModal('taskModal')">✕</button></div>
+            <div class="form-group"><label>Task Name</label><input type="text" id="task-name" class="form-input" placeholder="e.g., Beli tiket konser"></div>
+            <div class="form-group"><label>Deadline</label><input type="date" id="task-deadline" class="form-input"></div>
+            <div class="form-group"><label>Priority</label>
+                <select id="task-priority" class="form-input">
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('taskModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveTask()">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. STATE & DATA INITIALIZATION
+        let nav = 0; 
+        let editingScheduleId = null; // Buat nandain kalau lagi mode Edit
+        let selectedDateForNew = null; // Buat nyimpen tanggal pas klik "Add Schedule Here"
+        
+        let schedules = JSON.parse(localStorage.getItem('finzen_schedules')) || [];
+        let tasks = JSON.parse(localStorage.getItem('finzen_tasks')) || [];
+
+        const priorityColors = {
+            'High': { hex: '#D98C8C', class: 'tag-high' },
+            'Medium': { hex: '#7B9095', class: 'tag-medium' },
+            'Low': { hex: '#8F9779', class: 'tag-low' }
+        };
+
+        // 2. CALENDAR LOGIC
+        function loadCalendar() {
+            const calendarDays = document.getElementById('calendar-days');
+            const monthDisplay = document.getElementById('month-display');
+            
+            const dt = new Date();
+            if (nav !== 0) { dt.setMonth(new Date().getMonth() + nav); }
+            
+            const day = dt.getDate();
+            const month = dt.getMonth();
+            const year = dt.getFullYear();
+
+            monthDisplay.innerText = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const dateString = firstDayOfMonth.toLocaleDateString('en-US', { weekday: 'short' });
+            
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const paddingDays = weekdays.indexOf(dateString);
+
+            calendarDays.innerHTML = '';
+
+            for (let i = 1; i <= paddingDays + daysInMonth; i++) {
+                const daySquare = document.createElement('div');
+                daySquare.classList.add('day-cell');
+
+                if (i > paddingDays) {
+                    const currentDay = i - paddingDays;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+                    
+                    daySquare.innerHTML = `<div class="day-number">${currentDay}</div>`;
+                    
+                    // Kalau di klik, buka daily view modal
+                    daySquare.onclick = () => openDailyModal(dateStr);
+
+                    const todayDate = new Date();
+                    if (currentDay === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear()) {
+                        daySquare.classList.add('today');
+                    }
+
+                    const dayEvents = schedules.filter(sch => sch.date === dateStr);
+                    dayEvents.forEach(event => {
+                        const pColor = priorityColors[event.priority].hex;
+                        const eventDiv = document.createElement('div');
+                        eventDiv.classList.add('event-pill');
+                        eventDiv.style.backgroundColor = pColor;
+                        eventDiv.innerText = `${event.time} ${event.title}`;
+                        eventDiv.title = event.title; 
+                        daySquare.appendChild(eventDiv);
+                    });
+                } else {
+                    daySquare.classList.add('muted');
+                }
+                calendarDays.appendChild(daySquare);
+            }
+        }
+
+        function changeMonth(direction) { nav += direction; loadCalendar(); }
+
+        // 3. DAILY VIEW & UPCOMING LOGIC
+        function openDailyModal(dateStr) {
+            // Ubah format YYYY-MM-DD jadi lebih enak dibaca (opsional, tp kita pake str aslinya aja buat logic)
+            document.getElementById('daily-modal-title').innerText = `Schedule: ${dateStr}`;
+            selectedDateForNew = dateStr;
+            
+            const listDiv = document.getElementById('daily-schedule-list');
+            listDiv.innerHTML = '';
+            
+            let dayEvents = schedules.filter(sch => sch.date === dateStr);
+            dayEvents.sort((a,b) => a.time.localeCompare(b.time));
+
+            if(dayEvents.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">Kosong nih, gaada jadwal di tanggal ini.</div>';
+            } else {
+                dayEvents.forEach(event => {
+                    const pColor = priorityColors[event.priority].hex;
+                    listDiv.innerHTML += `
+                        <div style="border-left: 3px solid ${pColor}; padding: 12px; background: #fafaf9; border-radius: 0 8px 8px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${event.time} - ${event.title}</p>
+                                <span class="priority-tag" style="color:${pColor}; background: none; padding: 0; margin-top: 4px; display: inline-block;">${event.priority} Priority</span>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="editSchedule(${event.id})" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Edit">✏️</button>
+                                <button onclick="deleteSchedule(${event.id}, '${dateStr}')" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('dailyModal').style.display = 'flex';
+        }
+
+        function renderUpcoming() {
+            const listDiv = document.getElementById('upcoming-list');
+            listDiv.innerHTML = '';
+
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            let todayEvents = schedules.filter(sch => sch.date === todayStr);
+            todayEvents.sort((a, b) => a.time.localeCompare(b.time));
+
+            if (todayEvents.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">No schedule for today. Relax! 🍵</div>';
+            } else {
+                todayEvents.forEach(event => {
+                    const pColor = priorityColors[event.priority].hex;
+                    listDiv.innerHTML += `
+                        <div class="schedule-item" style="border-color: ${pColor};">
+                            <div style="display: flex; justify-content: space-between; align-items:flex-start;">
+                                <div>
+                                    <p style="font-weight: 700; font-size: 14px; color: var(--text-dark);">${event.title}</p>
+                                    <p style="font-size: 12px; color: ${pColor}; margin-top: 4px; font-weight:600;">${event.priority} Priority • ${event.time}</p>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <button onclick="editSchedule(${event.id})" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px;">✏️</button>
+                                    <button onclick="deleteSchedule(${event.id})" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px;">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // 4. TASK LIST LOGIC
+        function renderTasks() {
+            const listDiv = document.getElementById('task-list');
+            listDiv.innerHTML = '';
+            if (tasks.length === 0) { listDiv.innerHTML = '<div class="empty-state">No tasks pending.</div>'; return; }
+
+            tasks.sort((a, b) => {
+                if(a.completed === b.completed) return new Date(a.deadline) - new Date(b.deadline);
+                return a.completed ? 1 : -1;
+            });
+
+            tasks.forEach(task => {
+                const pClass = priorityColors[task.priority].class;
+                const checkedStr = task.completed ? 'checked' : '';
+                const itemClass = task.completed ? 'task-item completed' : 'task-item';
+                
+                listDiv.innerHTML += `
+                    <div class="${itemClass}">
+                        <input type="checkbox" class="task-checkbox" ${checkedStr} onchange="toggleTask(${task.id})">
+                        <div class="task-content">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                <p class="task-title">${task.name}</p>
+                                <span class="priority-tag ${pClass}">${task.priority}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <p style="font-size: 11px; color: var(--text-muted);">Deadline: ${task.deadline}</p>
+                                <button onclick="deleteTask(${task.id})" style="background:none; border:none; font-size:12px; cursor:pointer; color:var(--text-muted);">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 5. SAVE, EDIT, DELETE ACTIONS
+        function openAddFromDaily() {
+            closeModal('dailyModal');
+            openModal('scheduleModal');
+            if(selectedDateForNew) {
+                document.getElementById('sch-date').value = selectedDateForNew;
+            }
+        }
+
+        function editSchedule(id) {
+            let sch = schedules.find(s => s.id === id);
+            if(sch) {
+                editingScheduleId = id; // Set mode Edit
+                document.getElementById('schedule-modal-title').innerText = "Edit Schedule";
+                document.getElementById('sch-title').value = sch.title;
+                document.getElementById('sch-date').value = sch.date;
+                document.getElementById('sch-time').value = sch.time;
+                document.getElementById('sch-priority').value = sch.priority;
+                
+                closeModal('dailyModal');
+                document.getElementById('scheduleModal').style.display = 'flex';
+            }
+        }
+
+        function saveSchedule() {
+            const title = document.getElementById('sch-title').value;
+            const date = document.getElementById('sch-date').value;
+            const time = document.getElementById('sch-time').value;
+            const priority = document.getElementById('sch-priority').value;
+
+            if(!title || !date || !time) { alert("Isi semua datanya lengkap ya!"); return; }
+
+            if(editingScheduleId) {
+                // Update jadwal lama
+                let idx = schedules.findIndex(s => s.id === editingScheduleId);
+                schedules[idx] = { id: editingScheduleId, title, date, time, priority };
+                editingScheduleId = null; // Reset mode
+            } else {
+                // Bikin jadwal baru
+                schedules.push({ id: Date.now(), title, date, time, priority });
+            }
+
+            localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
+            
+            closeModal('scheduleModal');
+            
+            loadCalendar();
+            renderUpcoming();
+            
+            // Kalau lagi di mode daily, balikin buka daily view lagi
+            if(selectedDateForNew) openDailyModal(date);
+        }
+
+        function deleteSchedule(id, dateStr = null) {
+            if(confirm('Yakin mau hapus jadwal ini?')) {
+                schedules = schedules.filter(s => s.id !== id);
+                localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
+                loadCalendar();
+                renderUpcoming();
+                
+                // Kalau dihapusnya pas lagi buka modal daily, refresh modalnya
+                if(dateStr) openDailyModal(dateStr);
+            }
+        }
+
+        function saveTask() {
+            const name = document.getElementById('task-name').value;
+            const deadline = document.getElementById('task-deadline').value;
+            const priority = document.getElementById('task-priority').value;
+            if(!name || !deadline) { alert("Nama task dan deadline harus diisi!"); return; }
+            tasks.push({ id: Date.now(), name, deadline, priority, completed: false });
+            localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
+            closeModal('taskModal');
+            renderTasks();
+        }
+
+        function toggleTask(id) {
+            let task = tasks.find(t => t.id === id);
+            if(task) { task.completed = !task.completed; localStorage.setItem('finzen_tasks', JSON.stringify(tasks)); renderTasks(); }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        // 6. MODAL CONTROLS
+        function openModal(modalId) { 
+            // Reset form kalau nambah baru (bukan edit)
+            if(modalId === 'scheduleModal' && !editingScheduleId) {
+                document.getElementById('schedule-modal-title').innerText = "Add Schedule";
+                document.getElementById('sch-title').value = '';
+                document.getElementById('sch-date').valueAsDate = new Date();
+                document.getElementById('sch-time').value = '';
+                selectedDateForNew = null; 
+            }
+            if(modalId === 'taskModal') {
+                document.getElementById('task-name').value = '';
+                document.getElementById('task-deadline').valueAsDate = new Date();
+            }
+            document.getElementById(modalId).style.display = 'flex'; 
+        }
+        function closeModal(modalId) { 
+            document.getElementById(modalId).style.display = 'none'; 
+            if(modalId === 'scheduleModal') editingScheduleId = null; // Batalin mode edit kalau diclose
+        }
+        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingScheduleId = null; } }
+
+        // INIT SAAT HALAMAN DIBUKA
+        window.onload = () => {
+            loadCalendar();
+            renderUpcoming();
+            renderTasks();
+        };
+    </script>
+</body>
+</html>

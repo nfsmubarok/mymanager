@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マネージャー Dashboard - My Hobbies</title>
+    <style>
+        /* === TEMA AESTHETIC JEPANG (ZEN) === */
+        :root {
+            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
+            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
+            --gold-star: #F5C518;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* === SIDEBAR === */
+        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;}
+        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
+        .menu-group { margin-bottom: 24px; }
+        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
+        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
+        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
+
+        /* === MAIN CONTENT === */
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
+
+        /* === LAYOUT GRID === */
+        .content-grid { display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px; align-items: start; }
+        .box { background-color: var(--bg-white); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 24px;}
+        .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .box-header h3 { font-size: 18px; color: var(--text-dark); }
+
+        /* === WATCHLIST (KIRI) === */
+        .watchlist-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--bg-rice); cursor: pointer; transition: 0.2s;}
+        .watchlist-item:last-child { border-bottom: none; }
+        .watchlist-item:hover { transform: translateX(4px); }
+        .type-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: inline-block;}
+
+        /* === RATING CARDS (LETTERBOXD STYLE) === */
+        .rating-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .rating-card { background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column;}
+        .rating-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--matcha-green); }
+        .card-cover { height: 100px; display: flex; justify-content: center; align-items: center; font-size: 40px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column;}
+        .stars { color: var(--gold-star); font-size: 14px; letter-spacing: 2px; margin-top: 4px; margin-bottom: 8px;}
+        .review-text { font-size: 12px; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-style: italic;}
+        
+        .empty-state { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 14px; width: 100%; grid-column: 1 / -1;}
+
+        /* === MODALS === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .close-btn:hover { background: var(--sakura-pink); color: white; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark); }
+        .form-input:focus { border-color: var(--matcha-green); background-color: var(--bg-white); }
+        select.form-input { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; cursor: pointer; }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">マネージャー</div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Main Dashboard</div>
+            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+        </div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Leisure & Notes</div>
+            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>My Hobbies</h1>
+                <p>Track your entertainment, rate your experiences.</p>
+            </div>
+            <button class="btn-add" onclick="openAddModal()">+ Add New Entry</button>
+        </div>
+
+        <div class="content-grid">
+            <div class="box">
+                <div class="box-header">
+                    <h3>Up Next (Watchlist)</h3>
+                </div>
+                <div id="watchlist-container">
+                    </div>
+            </div>
+
+            <div class="box">
+                <div class="box-header">
+                    <h3>Reviews & Ratings</h3>
+                </div>
+                <div class="rating-grid" id="ratings-container">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hobbyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Entry</h2>
+                <button class="close-btn" onclick="closeModal('hobbyModal')">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="hobby-title" class="form-input" placeholder="e.g., One Piece, Valorant, Interstellar">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="hobby-type" class="form-input">
+                        <option value="Anime">Anime</option>
+                        <option value="Movie">Movie</option>
+                        <option value="Series">TV Series</option>
+                        <option value="Game">Game</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="hobby-status" class="form-input" onchange="toggleRatingArea()">
+                        <option value="Plan to Watch">Plan to Watch / Play</option>
+                        <option value="Completed">Completed / Rated</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="rating-area" style="display: none; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+                <div class="form-group">
+                    <label>Rating (1 - 5)</label>
+                    <select id="hobby-rating" class="form-input">
+                        <option value="5">★★★★★ (Masterpiece)</option>
+                        <option value="4">★★★★☆ (Great)</option>
+                        <option value="3">★★★☆☆ (Good)</option>
+                        <option value="2">★★☆☆☆ (Meh)</option>
+                        <option value="1">★☆☆☆☆ (Terrible)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Review / Notes</label>
+                    <textarea id="hobby-review" class="form-input" rows="3" placeholder="Tulis review singkat lu disini..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button class="btn-cancel" id="btn-delete-hobby" style="display:none; color: var(--sakura-pink); border-color: var(--sakura-pink);" onclick="triggerDeleteHobby()">Delete</button>
+                <div style="display: flex; gap: 10px; margin-left: auto;">
+                    <button class="btn-cancel" onclick="closeModal('hobbyModal')">Cancel</button>
+                    <button class="btn-submit" onclick="saveHobby()">Save Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
+            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
+            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus ini?</p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Setup Data Local Storage
+        let hobbies = JSON.parse(localStorage.getItem('finzen_hobbies')) || [];
+        let activeEditId = null;
+
+        // Config UI
+        const typeConfig = {
+            'Anime': { color: '#D98C8C', bg: 'rgba(217,140,140,0.15)', icon: '🌸' },
+            'Movie': { color: '#7B9095', bg: 'rgba(123,144,149,0.15)', icon: '🎬' },
+            'Series': { color: '#8F9779', bg: 'rgba(143,151,121,0.15)', icon: '📺' },
+            'Game': { color: '#6B7280', bg: 'rgba(107,114,128,0.15)', icon: '🎮' }
+        };
+
+        function getStars(num) {
+            return '★'.repeat(num) + '☆'.repeat(5 - num);
+        }
+
+        // --- RENDER UI ---
+        function renderHobbies() {
+            const watchContainer = document.getElementById('watchlist-container');
+            const rateContainer = document.getElementById('ratings-container');
+            watchContainer.innerHTML = '';
+            rateContainer.innerHTML = '';
+
+            const watchlist = hobbies.filter(h => h.status === 'Plan to Watch');
+            const ratedList = hobbies.filter(h => h.status === 'Completed');
+
+            // 1. Render Watchlist (List Kecil Kiri)
+            if (watchlist.length === 0) {
+                watchContainer.innerHTML = '<div class="empty-state" style="padding: 20px 0;">Kosong nih. Tambahin list baru!</div>';
+            } else {
+                watchlist.forEach(item => {
+                    const cfg = typeConfig[item.type];
+                    watchContainer.innerHTML += `
+                        <div class="watchlist-item" onclick="openEditModal(${item.id})">
+                            <div>
+                                <span class="type-badge" style="background:${cfg.bg}; color:${cfg.color};">${item.type}</span>
+                                <p style="font-weight: 600; font-size: 14px;">${item.title}</p>
+                            </div>
+                            <div style="font-size: 18px;">${cfg.icon}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            // 2. Render Rated Cards (Letterboxd style Kanan)
+            if (ratedList.length === 0) {
+                rateContainer.innerHTML = '<div class="empty-state">Belum ada review. Selesain satu terus kasih rating!</div>';
+            } else {
+                // Sort dari rating tertinggi
+                ratedList.sort((a,b) => b.rating - a.rating);
+                
+                ratedList.forEach(item => {
+                    const cfg = typeConfig[item.type];
+                    rateContainer.innerHTML += `
+                        <div class="rating-card" onclick="openEditModal(${item.id})">
+                            <div class="card-cover" style="background: ${cfg.bg}; border-bottom: 1px solid var(--border-color);">
+                                ${cfg.icon}
+                            </div>
+                            <div class="card-body">
+                                <h4 style="font-size: 15px; color: var(--text-dark);">${item.title}</h4>
+                                <div class="stars">${getStars(item.rating)}</div>
+                                <p class="review-text">"${item.review || 'No review written.'}"</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // --- FORM & MODAL LOGIC ---
+        function toggleRatingArea() {
+            const status = document.getElementById('hobby-status').value;
+            const area = document.getElementById('rating-area');
+            if(status === 'Completed') {
+                area.style.display = 'block';
+            } else {
+                area.style.display = 'none';
+            }
+        }
+
+        function openAddModal() {
+            activeEditId = null;
+            document.getElementById('modal-title').innerText = "Add New Entry";
+            document.getElementById('hobby-title').value = '';
+            document.getElementById('hobby-type').value = 'Anime';
+            document.getElementById('hobby-status').value = 'Plan to Watch';
+            document.getElementById('hobby-rating').value = '5';
+            document.getElementById('hobby-review').value = '';
+            document.getElementById('btn-delete-hobby').style.display = 'none';
+            toggleRatingArea();
+            openModal('hobbyModal');
+        }
+
+        function openEditModal(id) {
+            const item = hobbies.find(h => h.id === id);
+            if(!item) return;
+
+            activeEditId = id;
+            document.getElementById('modal-title').innerText = "Edit Entry";
+            document.getElementById('hobby-title').value = item.title;
+            document.getElementById('hobby-type').value = item.type;
+            document.getElementById('hobby-status').value = item.status;
+            document.getElementById('hobby-rating').value = item.rating || '5';
+            document.getElementById('hobby-review').value = item.review || '';
+            document.getElementById('btn-delete-hobby').style.display = 'block';
+            toggleRatingArea();
+            openModal('hobbyModal');
+        }
+
+        function saveHobby() {
+            const title = document.getElementById('hobby-title').value;
+            const type = document.getElementById('hobby-type').value;
+            const status = document.getElementById('hobby-status').value;
+            const rating = parseInt(document.getElementById('hobby-rating').value);
+            const review = document.getElementById('hobby-review').value;
+
+            if(!title) { alert("Judulnya jangan dikosongin cuy!"); return; }
+
+            const payload = { title, type, status, rating, review };
+
+            if(activeEditId) {
+                // Update
+                const idx = hobbies.findIndex(h => h.id === activeEditId);
+                hobbies[idx] = { ...hobbies[idx], ...payload };
+            } else {
+                // Bikin baru
+                payload.id = Date.now();
+                hobbies.push(payload);
+            }
+
+            localStorage.setItem('finzen_hobbies', JSON.stringify(hobbies));
+            closeModal('hobbyModal');
+            renderHobbies();
+        }
+
+        // --- DELETE LOGIC (Pakai Custom Confirm) ---
+        let confirmAction = null; 
+        
+        function customConfirm(message, actionCallback) {
+            document.getElementById('confirm-msg').innerText = message;
+            confirmAction = actionCallback; 
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function executeConfirm() {
+            if(confirmAction) {
+                confirmAction(); 
+                confirmAction = null;
+            }
+            closeModal('confirmModal');
+        }
+
+        function triggerDeleteHobby() {
+            customConfirm(`Yakin mau menghapus ini dari list?`, () => {
+                hobbies = hobbies.filter(h => h.id !== activeEditId);
+                localStorage.setItem('finzen_hobbies', JSON.stringify(hobbies));
+                closeModal('hobbyModal');
+                renderHobbies();
+            });
+        }
+
+        // --- BASE MODAL CONTROLS ---
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) { 
+            if (event.target.classList.contains('modal-overlay')) { 
+                event.target.style.display = "none"; 
+            } 
+        }
+
+        // Initial Render
+        window.onload = () => { renderHobbies(); };
+    </script>
+</body>
+</html>

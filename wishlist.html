@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マネージャー Dashboard - Wishlist</title>
+    <style>
+        /* === TEMA AESTHETIC JEPANG (ZEN) === */
+        :root {
+            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
+            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* === SIDEBAR === */
+        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; }
+        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
+        .menu-group { margin-bottom: 24px; }
+        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
+        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
+        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
+        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
+
+        /* === MAIN CONTENT === */
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
+
+        /* === WISHLIST CARDS === */
+        .wishlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .box { background-color: var(--bg-white); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; transition: 0.2s; position: relative; overflow: hidden;}
+        .box:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--matcha-green); }
+        .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .box-header h3 { font-size: 18px; color: var(--text-dark); }
+        .price-badge { background: var(--bg-rice); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; color: var(--text-dark); }
+        
+        .stat-bar-bg { width: 100%; height: 8px; background: var(--bg-rice); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; background: var(--matcha-green); }
+        
+        .plan-list { font-size: 13px; color: var(--text-muted); margin-left: 20px; margin-bottom: 0; padding-left: 0; list-style-type: none; }
+        .plan-list li { margin-bottom: 6px; position: relative; }
+        .plan-list li::before { content: "•"; position: absolute; left: -12px; color: var(--border-color); }
+        .plan-list li.done { text-decoration: line-through; opacity: 0.6; }
+        .plan-list li.done::before { content: "✓"; color: var(--matcha-green); }
+        
+        .empty-state { grid-column: span 2; text-align: center; color: var(--text-muted); padding: 60px 0; background: var(--bg-white); border-radius: 16px; border: 1px dashed var(--border-color); }
+
+        /* === MODALS === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .close-btn:hover { background: var(--sakura-pink); color: white; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark); }
+        .form-input:focus { border-color: var(--matcha-green); background-color: var(--bg-white); }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        /* Edit Modal specific */
+        .edit-checklist { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dark); }
+        .checklist-item input { width: 16px; height: 16px; accent-color: var(--matcha-green); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">マネージャー</div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Main Dashboard</div>
+            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+        </div>
+        
+        <div class="menu-group">
+            <div class="menu-title">Leisure & Notes</div>
+            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Wishlist Tracker</h1>
+                <p>Plan your dreams, step by step.</p>
+            </div>
+            <button class="btn-add" onclick="openAddModal()">+ Add New Wish</button>
+        </div>
+
+        <div class="wishlist-grid" id="wishlist-container">
+            <!-- Wishlist cards will be injected here via JS -->
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODALS -->
+    <!-- ============================================== -->
+
+    <!-- Modal 1: Add New Wish -->
+    <div id="addWishModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Wish</h2>
+                <button class="close-btn" onclick="closeModal('addWishModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Wish Title</label>
+                <input type="text" id="wish-title" class="form-input" placeholder="e.g., Build Campervan, PC Rakitan">
+            </div>
+            <div class="form-group">
+                <label>Target Budget (Rp)</label>
+                <input type="number" id="wish-target" class="form-input" placeholder="e.g., 15000000">
+            </div>
+            <div class="form-group">
+                <label>Current Saved (Rp)</label>
+                <input type="number" id="wish-current" class="form-input" placeholder="e.g., 0" value="0">
+            </div>
+            <div class="form-group">
+                <label>Action Plans (1 plan per baris)</label>
+                <textarea id="wish-plans" class="form-input" rows="4" placeholder="Nabung 2 juta per bulan&#10;Riset harga barang&#10;Cicil beli parts"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('addWishModal')">Cancel</button>
+                <button class="btn-submit" onclick="saveNewWish()">Save Wish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Edit & Update Progress -->
+    <div id="editWishModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="edit-modal-title">Update Progress</h2>
+                <button class="close-btn" onclick="closeModal('editWishModal')">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Update Saved Amount (Rp)</label>
+                <input type="number" id="edit-wish-current" class="form-input">
+                <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);" id="edit-wish-target-hint">Target: Rp 0</p>
+            </div>
+
+            <div class="form-group">
+                <label>Action Plans Check</label>
+                <div class="edit-checklist" id="edit-wish-plans">
+                    <!-- Checkboxes injected here -->
+                </div>
+            </div>
+
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button class="btn-cancel" style="color: var(--sakura-pink); border-color: var(--sakura-pink);" onclick="triggerDeleteWish()">Delete Wish</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-cancel" onclick="closeModal('editWishModal')">Cancel</button>
+                    <button class="btn-submit" onclick="saveEditWish()">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Custom Confirm (Smooth Aesthetic) -->
+    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
+            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
+            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus ini?</p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ============================================== -->
+    <script>
+        // Data dari Local Storage
+        let wishlists = JSON.parse(localStorage.getItem('finzen_wishlists')) || [];
+        let activeEditId = null; 
+
+        // Helper Format Rupiah
+        function formatRp(angka) {
+            if(angka >= 1000000) {
+                return "Rp " + (angka / 1000000).toFixed(1).replace('.0', '') + " Jt";
+            }
+            return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        function formatRpFull(angka) {
+            return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Render UI
+        function renderWishlists() {
+            const container = document.getElementById('wishlist-container');
+            container.innerHTML = '';
+
+            if (wishlists.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size: 24px; display: block; margin-bottom: 10px;">✨</span>
+                        Belum ada impian yang dicatat. Yuk tambahin targetmu!
+                    </div>`;
+                return;
+            }
+
+            wishlists.forEach(wish => {
+                let percent = (wish.currentAmount / wish.targetAmount) * 100;
+                if (percent > 100) percent = 100;
+                
+                let plansHtml = '';
+                if(wish.plans && wish.plans.length > 0) {
+                    plansHtml = '<h4 style="font-size: 12px; margin-bottom: 8px; text-transform:uppercase; color: var(--text-dark);">Action Plan</h4><ul class="plan-list">';
+                    const displayPlans = wish.plans.slice(0, 3);
+                    displayPlans.forEach(plan => {
+                        const doneClass = plan.done ? 'class="done"' : '';
+                        plansHtml += `<li ${doneClass}>${plan.text}</li>`;
+                    });
+                    if(wish.plans.length > 3) {
+                        plansHtml += `<li><i style="opacity: 0.6;">+ ${wish.plans.length - 3} more...</i></li>`;
+                    }
+                    plansHtml += '</ul>';
+                }
+
+                const barColor = percent >= 100 ? 'var(--ocean-blue)' : 'var(--matcha-green)';
+                const borderTop = percent >= 100 ? 'var(--ocean-blue)' : 'var(--matcha-green)';
+
+                container.innerHTML += `
+                    <div class="box" style="border-top: 4px solid ${borderTop};" onclick="openEditModal(${wish.id})">
+                        <div class="box-header">
+                            <h3 style="font-size: 18px; display:flex; align-items:center; gap:8px;">
+                                ${percent >= 100 ? '🎉' : '🎯'} ${wish.title}
+                            </h3>
+                            <span class="price-badge">${formatRp(wish.targetAmount)}</span>
+                        </div>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <p style="font-size: 13px; color: var(--text-dark); font-weight:600;">
+                                Progress: ${formatRp(wish.currentAmount)}
+                            </p>
+                            <p style="font-size: 13px; font-weight: bold; color: ${barColor};">${Math.floor(percent)}%</p>
+                        </div>
+                        
+                        <div class="stat-bar-bg">
+                            <div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor};"></div>
+                        </div>
+                        
+                        ${plansHtml}
+                    </div>
+                `;
+            });
+        }
+
+        // Add Modal
+        function openAddModal() {
+            document.getElementById('wish-title').value = '';
+            document.getElementById('wish-target').value = '';
+            document.getElementById('wish-current').value = '0';
+            document.getElementById('wish-plans').value = '';
+            openModal('addWishModal');
+        }
+
+        function saveNewWish() {
+            const title = document.getElementById('wish-title').value;
+            const targetAmount = parseInt(document.getElementById('wish-target').value);
+            const currentAmount = parseInt(document.getElementById('wish-current').value) || 0;
+            const plansText = document.getElementById('wish-plans').value;
+
+            if(!title || isNaN(targetAmount)) {
+                alert("Title dan Target Budget wajib diisi!"); return;
+            }
+
+            let plansArray = [];
+            if(plansText.trim() !== '') {
+                plansArray = plansText.split('\n').filter(p => p.trim() !== '').map((text, index) => {
+                    return { id: index, text: text.trim(), done: false };
+                });
+            }
+
+            const newWish = { id: Date.now(), title, targetAmount, currentAmount, plans: plansArray };
+
+            wishlists.push(newWish);
+            localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+            
+            closeModal('addWishModal');
+            renderWishlists();
+        }
+
+        // Edit Modal
+        function openEditModal(id) {
+            const wish = wishlists.find(w => w.id === id);
+            if(!wish) return;
+
+            activeEditId = id;
+            document.getElementById('edit-modal-title').innerText = wish.title;
+            document.getElementById('edit-wish-current').value = wish.currentAmount;
+            document.getElementById('edit-wish-target-hint').innerText = `Target total: ${formatRpFull(wish.targetAmount)}`;
+
+            const checklistContainer = document.getElementById('edit-wish-plans');
+            checklistContainer.innerHTML = '';
+            
+            if(wish.plans && wish.plans.length > 0) {
+                wish.plans.forEach(plan => {
+                    const checked = plan.done ? 'checked' : '';
+                    checklistContainer.innerHTML += `
+                        <label class="checklist-item">
+                            <input type="checkbox" id="plan-${plan.id}" ${checked}>
+                            <span style="${plan.done ? 'text-decoration:line-through; opacity:0.6;' : ''}">${plan.text}</span>
+                        </label>
+                    `;
+                });
+            } else {
+                checklistContainer.innerHTML = '<p style="font-size: 12px; color: var(--text-muted);">Tidak ada action plan.</p>';
+            }
+
+            openModal('editWishModal');
+        }
+
+        function saveEditWish() {
+            const wishIndex = wishlists.findIndex(w => w.id === activeEditId);
+            if(wishIndex === -1) return;
+
+            const newAmount = parseInt(document.getElementById('edit-wish-current').value) || 0;
+            wishlists[wishIndex].currentAmount = newAmount;
+
+            if(wishlists[wishIndex].plans) {
+                wishlists[wishIndex].plans.forEach(plan => {
+                    const checkbox = document.getElementById(`plan-${plan.id}`);
+                    if(checkbox) { plan.done = checkbox.checked; }
+                });
+            }
+
+            localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+            closeModal('editWishModal');
+            renderWishlists();
+        }
+
+        // Custom Confirm & Delete Logic (DIJAMIN JALAN)
+        let confirmAction = null; 
+        
+        function customConfirm(message, actionCallback) {
+            document.getElementById('confirm-msg').innerText = message;
+            confirmAction = actionCallback; 
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        // Fungsi ini dipanggil dari onclick tombol "Yes, Delete" di HTML
+        function executeConfirm() {
+            if(confirmAction) {
+                confirmAction(); 
+                confirmAction = null; // Clear setelah jalan
+            }
+            closeModal('confirmModal');
+        }
+
+        function triggerDeleteWish() {
+            customConfirm(`Yakin mau menghapus wishlist ini?`, () => {
+                // Hapus data berdasarkan ID yang lagi aktif
+                wishlists = wishlists.filter(w => w.id !== activeEditId);
+                localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+                
+                // Tutup modal edit & refresh layar
+                closeModal('editWishModal');
+                renderWishlists();
+            });
+        }
+
+        // Modal Base Logic
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        
+        // Tutup modal kalau klik area kosong, kecuali kalau lagi buka confirmModal
+        window.onclick = function(event) { 
+            if (event.target.classList.contains('modal-overlay')) { 
+                event.target.style.display = "none"; 
+            } 
+        }
+
+        // Initial Render
+        window.onload = () => { renderWishlists(); };
+    </script>
+</body>
+</html>
