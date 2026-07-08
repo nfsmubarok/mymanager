@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マネージャー Dashboard - Dumpspaces</title>
     <style>
-        /* === TEMA AESTHETIC JEPANG (ZEN) === */
         :root {
             --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
             --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
@@ -13,7 +12,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
 
-        /* === SIDEBAR === */
         .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;}
         .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
         .menu-group { margin-bottom: 24px; }
@@ -22,7 +20,6 @@
         .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
         .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
 
-        /* === MAIN CONTENT === */
         .main-content { flex: 1; padding: 32px; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { font-size: 28px; margin-bottom: 4px; }
@@ -31,19 +28,11 @@
         .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
         .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
 
-        /* === MASONRY LAYOUT (PINTEREST STYLE) === */
-        .masonry-grid {
-            column-count: 3;
-            column-gap: 24px;
-        }
+        .masonry-grid { column-count: 3; column-gap: 24px; }
         @media (max-width: 1200px) { .masonry-grid { column-count: 2; } }
         @media (max-width: 768px) { .masonry-grid { column-count: 1; } }
 
-        .dump-card {
-            background-color: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 24px; break-inside: avoid;
-            position: relative; overflow: hidden; transition: 0.2s;
-        }
+        .dump-card { background-color: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 24px; break-inside: avoid; position: relative; overflow: hidden; transition: 0.2s; }
         .dump-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--matcha-green); }
         
         .dump-header { padding: 16px 20px 8px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -57,7 +46,6 @@
         .dump-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word;}
         .dump-link { color: var(--ocean-blue); text-decoration: none; font-size: 13px; word-break: break-all; display: flex; align-items: center; gap: 6px; margin-top: 8px;}
         .dump-link:hover { text-decoration: underline; }
-        
         .dump-image { width: 100%; height: auto; display: block; border-bottom: 1px solid var(--border-color); }
         
         .btn-delete-card { background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0; transition: 0.2s; font-size: 14px;}
@@ -66,7 +54,6 @@
 
         .empty-state { column-span: all; text-align: center; color: var(--text-muted); padding: 80px 0; background: var(--bg-white); border-radius: 16px; border: 1px dashed var(--border-color); }
 
-        /* === MODALS === */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -83,20 +70,20 @@
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
         .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 24px; border-radius: 8px; transition: 0.4s ease-out; z-index: 9999; font-weight: bold; font-size: 14px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="logo">マネージャー</div>
-        
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
             <a href="index.html" class="menu-item">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
             <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
-        
         <div class="menu-group">
             <div class="menu-title">Leisure & Notes</div>
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
@@ -130,7 +117,7 @@
                 <select id="dump-type" class="form-input" onchange="toggleDumpFields()">
                     <option value="Note">📝 Text / Note</option>
                     <option value="Link">🔗 Web Link</option>
-                    <option value="Image">🖼️ Image (URL)</option>
+                    <option value="Image">🖼️ Upload Image</option>
                 </select>
             </div>
 
@@ -150,14 +137,13 @@
             </div>
 
             <div class="form-group" id="field-image" style="display: none;">
-                <label>Image Address (URL)</label>
-                <input type="url" id="dump-img-url" class="form-input" placeholder="https://.../image.png">
-                <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">*Pakai URL gambar dari internet dulu ya buat ngemat *Local Storage*.</p>
+                <label>Upload Image from Device</label>
+                <input type="file" id="dump-file" class="form-input" accept="image/*">
             </div>
 
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal('dumpModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveDump()">Drop it!</button>
+                <button class="btn-submit" id="btn-save-dump" onclick="saveDump()">Drop it!</button>
             </div>
         </div>
     </div>
@@ -174,16 +160,24 @@
         </div>
     </div>
 
+    <div id="toast" style="position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 24px; border-radius: 8px; transition: 0.3s; opacity: 0; z-index: 2000; font-size: 14px; font-weight: bold;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
+        // 1. INIT SUPABASE 
         const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
         const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Setup Data Local Storage
         let dumps = JSON.parse(localStorage.getItem('finzen_dumps')) || [];
         
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.bottom = '30px'; t.style.opacity = '1';
+            setTimeout(() => { t.style.bottom = '-50px'; t.style.opacity = '0'; }, 3000);
+        }
+
         // --- RENDER UI ---
         function renderDumps() {
             const container = document.getElementById('dumps-container');
@@ -198,7 +192,6 @@
                 return;
             }
 
-            // Urutin dari yang paling baru
             dumps.sort((a,b) => b.id - a.id);
 
             dumps.forEach(dump => {
@@ -206,7 +199,6 @@
                 let contentHtml = '';
                 let titleHtml = dump.title ? `<h4 class="dump-title">${dump.title}</h4>` : '';
                 
-                // Format berdasarkan tipe Dump
                 if (dump.type === 'Note') {
                     badgeClass = 'type-note';
                     contentHtml = `<p class="dump-text">${dump.content}</p>`;
@@ -218,10 +210,9 @@
                 } 
                 else if (dump.type === 'Image') {
                     badgeClass = 'type-image';
-                    contentHtml = ''; // Gambarnya ditaruh di atas luar box-body biar *full width*
+                    contentHtml = ''; 
                 }
 
-                // Render Kartu
                 container.innerHTML += `
                     <div class="dump-card">
                         ${dump.type === 'Image' ? `<img src="${dump.url}" alt="Dumped Image" class="dump-image" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">` : ''}
@@ -248,18 +239,17 @@
             document.getElementById('field-note').style.display = 'none';
             document.getElementById('field-link').style.display = 'none';
             document.getElementById('field-image').style.display = 'none';
-            
             document.getElementById('label-title').innerText = "Title (Optional)";
 
             if (type === 'Note') {
                 document.getElementById('field-note').style.display = 'block';
             } else if (type === 'Link') {
                 document.getElementById('field-link').style.display = 'block';
-                document.getElementById('field-note').style.display = 'block'; // Buat deskripsi link
+                document.getElementById('field-note').style.display = 'block';
                 document.getElementById('label-title').innerText = "Link Title";
             } else if (type === 'Image') {
                 document.getElementById('field-image').style.display = 'block';
-                document.getElementById('field-note').style.display = 'block'; // Buat caption gambar
+                document.getElementById('field-note').style.display = 'block';
                 document.getElementById('label-title').innerText = "Caption / Title (Optional)";
             }
         }
@@ -268,55 +258,82 @@
             document.getElementById('dump-title').value = '';
             document.getElementById('dump-content').value = '';
             document.getElementById('dump-url').value = '';
-            document.getElementById('dump-img-url').value = '';
+            document.getElementById('dump-image-file').value = '';
             document.getElementById('dump-type').value = 'Note';
             toggleDumpFields();
             openModal('dumpModal');
         }
 
         async function saveDump() {
+            const btn = document.querySelector('.btn-submit');
             const type = document.getElementById('dump-type').value;
             const title = document.getElementById('dump-title').value;
             const content = document.getElementById('dump-content').value;
-            
-            let url = '';
-            if(type === 'Link') url = document.getElementById('dump-url').value;
-            if(type === 'Image') url = document.getElementById('dump-img-url').value;
-
-            // Validasi simpel
-            if(type === 'Note' && !title && !content) { alert("Isi notesnya dong!"); return; }
-            if(type === 'Link' && !url) { alert("URL Linknya jangan kosong!"); return; }
-            if(type === 'Image' && !url) { alert("URL Image-nya jangan kosong!"); return; }
-
-            // Bikin tanggal (buat estetika footer card)
             const today = new Date();
             const dateStr = today.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            
+            let finalUrl = '';
+            
+            if(type === 'Note' && !title && !content) { alert("Isi notesnya dong!"); return; }
+            if(type === 'Link') {
+                finalUrl = document.getElementById('dump-url').value;
+                if(!finalUrl) { alert("URL Linknya jangan kosong!"); return; }
+            }
 
-            const payload = { type, title, content, url, date: dateStr };
+            btn.innerText = "Saving..."; btn.disabled = true;
 
-            // Insert ke Supabase
-            const { error } = await supabaseClient
+            // Logic khusus Image Upload
+            if(type === 'Image') {
+                const fileInput = document.getElementById('dump-image-file');
+                if(!fileInput.files || fileInput.files.length === 0) {
+                    alert("Pilih gambarnya dulu coy!"); btn.innerText = "Drop it!"; btn.disabled = false; return;
+                }
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                // 1. Upload ke Storage "dumps-images"
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('dumps-images')
+                    .upload(fileName, file);
+
+                if(uploadError) {
+                    console.error(uploadError); alert("Gagal upload gambar ke cloud!"); 
+                    btn.innerText = "Drop it!"; btn.disabled = false; return;
+                }
+
+                // 2. Ambil Public URL
+                const { data: publicUrlData } = supabaseClient.storage
+                    .from('dumps-images')
+                    .getPublicUrl(fileName);
+
+                finalUrl = publicUrlData.publicUrl;
+            }
+
+            const payload = { type, title, content, url: finalUrl, date: dateStr };
+
+            // 3. Simpan data ke Database
+            const { error: dbError } = await supabaseClient
                 .from('dumpspaces')
                 .insert([payload]);
 
-            if (error) {
-                console.error("Error dari Supabase:", error);
-                alert("Gagal simpan dump ke cloud! Cek console.");
-                return;
+            if (dbError) {
+                console.error(dbError); alert("Gagal simpan ke database!");
+                btn.innerText = "Drop it!"; btn.disabled = false; return;
             }
 
-            // Update Lokal
             payload.id = Date.now();
             dumps.push(payload);
             localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
             
+            btn.innerText = "Drop it!"; btn.disabled = false;
             closeModal('dumpModal');
+            showToast("Dump saved successfully!");
             renderDumps();
         }
 
-        // --- DELETE LOGIC (Pakai Custom Confirm dari code sebelumnya) ---
+        // --- DELETE LOGIC ---
         let confirmAction = null; 
-        
         function customConfirm(message, actionCallback) {
             document.getElementById('confirm-msg').innerText = message;
             confirmAction = actionCallback; 
@@ -324,31 +341,26 @@
         }
 
         function executeConfirm() {
-            if(confirmAction) {
-                confirmAction(); 
-                confirmAction = null;
-            }
+            if(confirmAction) { confirmAction(); confirmAction = null; }
             closeModal('confirmModal');
         }
 
         function triggerDeleteDump(id) {
-            customConfirm(`Yakin mau ngebuang dump ini selamanya?`, () => {
+            customConfirm(`Yakin mau ngebuang dump ini selamanya?`, async () => {
+                const { error } = await supabaseClient.from('dumpspaces').delete().eq('id', id);
+                if(error) { alert("Gagal hapus dari cloud!"); return; }
+
                 dumps = dumps.filter(d => d.id !== id);
                 localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
                 renderDumps();
+                showToast("Dump deleted!");
             });
         }
 
-        // --- BASE MODAL CONTROLS ---
         function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-        window.onclick = function(event) { 
-            if (event.target.classList.contains('modal-overlay')) { 
-                event.target.style.display = "none"; 
-            } 
-        }
+        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; } }
 
-        // Initial Render
         window.onload = () => { renderDumps(); };
     </script>
 </body>

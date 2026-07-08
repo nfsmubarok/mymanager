@@ -13,7 +13,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
 
-        /* === SIDEBAR === */
         .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; }
         .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
         .menu-group { margin-bottom: 24px; }
@@ -22,29 +21,19 @@
         .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
         .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
 
-        /* === MAIN CONTENT & CARDS === */
         .main-content { flex: 1; padding: 32px; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { font-size: 28px; margin-bottom: 4px; }
         .header p { color: var(--text-muted); font-size: 14px; }
         
-        /* === AESTHETIC BUTTONS === */
         .btn-add { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(143, 151, 121, 0.2); }
         .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143, 151, 121, 0.3); }
-        .btn-add:active { transform: translateY(0); }
         .btn-small { background-color: var(--bg-rice); color: var(--text-dark); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
         .btn-small:hover { background-color: var(--border-color); }
         
-        /* === AESTHETIC DROPDOWNS (SELECT) === */
-        select { 
-            appearance: none; -webkit-appearance: none; -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
-            cursor: pointer; transition: all 0.2s;
-        }
+        select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; cursor: pointer; transition: all 0.2s; }
         .wallet-select { border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 28px 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-dark); background-color: var(--bg-rice); outline: none; }
-        .wallet-select:hover { border-color: var(--matcha-green); }
-
+        
         .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .card { background-color: var(--bg-white); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); position: relative; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.1; }
@@ -55,62 +44,59 @@
         .card-amount { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
         .text-green { color: var(--matcha-green); }
         .text-red { color: var(--sakura-pink); }
+        .text-blue { color: var(--ocean-blue); }
         
-        /* === KONTEN BAWAH === */
-        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .box { background-color: var(--bg-white); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;}
+        .box { background-color: var(--bg-white); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
-        /* Stats & Wallets Styling */
         .stat-item { margin-bottom: 15px; }
         .stat-bar-bg { width: 100%; height: 8px; background: var(--bg-rice); border-radius: 4px; margin-top: 6px; overflow: hidden; }
         .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
         .wallet-sub-box { border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background: #fafaf9; transition: all 0.2s; }
-        .wallet-sub-box:hover { border-color: var(--matcha-green); transform: translateX(2px); }
+        
         .transaction-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--bg-rice); }
         .transaction-item:last-child { border-bottom: none; }
         .empty-state { text-align: center; color: var(--text-muted); padding: 30px 0; font-size: 14px; }
 
-        /* === OVERLAY / MODAL CSS === */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--bg-white); padding: 30px; border-radius: 20px; width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease-out forwards; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .modal-header h2 { font-size: 20px; color: var(--text-dark); }
-        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+        .close-btn { background: var(--bg-rice); border: none; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         .close-btn:hover { background: var(--sakura-pink); color: white; }
         
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
         .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background-color: var(--bg-rice); transition: 0.2s; color: var(--text-dark);}
-        .form-input:focus { border-color: var(--matcha-green); box-shadow: 0 0 0 3px rgba(143, 151, 121, 0.1); background-color: var(--bg-white);}
+        .form-input:focus { border-color: var(--matcha-green); background-color: var(--bg-white);}
         
         .radio-group { display: flex; gap: 10px; }
         .radio-btn { flex: 1; text-align: center; }
         .radio-btn input[type="radio"] { display: none; }
-        .radio-btn label { display: block; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; margin: 0;}
+        .radio-btn label { display: block; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; margin: 0; transition: 0.2s;}
         .radio-btn input[type="radio"]:checked + label { background-color: var(--matcha-green); color: white; border-color: var(--matcha-green); }
         .radio-btn.expense input[type="radio"]:checked + label { background-color: var(--sakura-pink); border-color: var(--sakura-pink); }
 
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
         .btn-cancel { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;}
-        .btn-cancel:hover { background-color: var(--bg-rice); color: var(--text-dark); }
         .btn-submit { background-color: var(--matcha-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
-        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        /* Toast Notification */
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 24px; border-radius: 8px; transition: 0.4s ease-out; z-index: 9999; font-weight: bold; font-size: 14px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="logo">マネージャー</div>
-        
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
             <a href="index.html" class="menu-item active">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
             <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
-        
         <div class="menu-group">
             <div class="menu-title">Leisure & Notes</div>
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
@@ -154,11 +140,10 @@
         </div>
 
         <div class="content-grid">
-            <div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
                 <div class="box">
-                    <div class="box-header">
+                    <div class="box-header" style="margin-bottom: 10px;">
                         <h3>Recent Transactions</h3>
-                        <button class="btn-small" onclick="openModal('allTxModal')">See All</button>
                     </div>
                     <div id="recent-tx-list"></div>
                 </div>
@@ -169,7 +154,7 @@
                 </div>
             </div>
 
-            <div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
                 <div class="box">
                     <div class="box-header">
                         <h3>Wallets</h3>
@@ -185,11 +170,25 @@
                 </div>
             </div>
         </div>
+
+        <div class="box" style="margin-bottom: 30px;">
+            <div class="box-header">
+                <h3>All Transactions</h3>
+                <select id="filter-month" class="form-input" style="width: auto; padding: 6px 30px 6px 12px;" onchange="renderAllTransactions()">
+                    <option value="all">All Months</option>
+                    <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                    <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                    <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                    <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                </select>
+            </div>
+            <div id="all-tx-list"></div>
+        </div>
     </div>
 
     <div id="transactionModal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h2>Add Transaction</h2><button class="close-btn" onclick="closeModal('transactionModal')">✕</button></div>
+            <div class="modal-header"><h2 id="tx-modal-title">Add Transaction</h2><button class="close-btn" onclick="closeModal('transactionModal')">✕</button></div>
             <div class="form-group"><label>Type</label>
                 <div class="radio-group">
                     <div class="radio-btn"><input type="radio" id="type-income" name="tx-type" value="income" checked><label for="type-income">Income</label></div>
@@ -213,25 +212,6 @@
                 <button class="btn-cancel" onclick="closeModal('transactionModal')">Cancel</button>
                 <button class="btn-submit" onclick="saveTransaction()">Save Transaction</button>
             </div>
-        </div>
-    </div>
-
-    <div id="allTxModal" class="modal-overlay">
-        <div class="modal-content" style="width: 550px;">
-            <div class="modal-header">
-                <h2>All Transactions</h2>
-                <button class="close-btn" onclick="closeModal('allTxModal')">✕</button>
-            </div>
-            <div class="form-group">
-                <select id="filter-month" class="form-input" onchange="renderAllTransactions()">
-                    <option value="all">All Months</option>
-                    <option value="0">January</option><option value="1">February</option><option value="2">March</option>
-                    <option value="3">April</option><option value="4">May</option><option value="5">June</option>
-                    <option value="6">July</option><option value="7">August</option><option value="8">September</option>
-                    <option value="9">October</option><option value="10">November</option><option value="11">December</option>
-                </select>
-            </div>
-            <div id="all-tx-list" style="max-height: 400px; overflow-y: auto; padding-right: 10px;"></div>
         </div>
     </div>
 
@@ -263,18 +243,37 @@
         </div>
     </div>
 
+    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
+            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
+            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus?</p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Message Here</div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. INIT SUPABASE (URL dibenerin, nama variabel supabaseClient)
-        // PERHATIAN: Pastikan Key lu ini bener full sampai ujung ya, kalau kepotong paste ulang!
         const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
         const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3'; 
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. DATA UTAMA
-        // 2. DATA UTAMA (KOSONGAN BUAT DEPLOY)
         let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
         let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
+        let editingTxId = null;
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.backgroundColor = isError ? 'var(--sakura-pink)' : 'var(--matcha-green)';
+            t.style.bottom = '30px';
+            setTimeout(() => { t.style.bottom = '-100px'; }, 3000);
+        }
 
         function formatRp(angka) {
             return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -285,7 +284,6 @@
             return icons[category] || "📝";
         }
 
-        // 3. FUNGSI RENDER UTAMA
         function updateDashboard() {
             const mainSelect = document.getElementById('main-wallet-select');
             const txWallet = document.getElementById('tx-wallet');
@@ -293,7 +291,6 @@
             const tfTo = document.getElementById('transfer-to');
             
             let currentMainVal = mainSelect.value;
-            
             mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
             wallets.forEach(w => {
                 let opt = `<option value="${w.id}">${w.name}</option>`;
@@ -308,10 +305,7 @@
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
             
-            let totalIncome = 0;
-            let totalExpense = 0;
-            let totalSavings = 0;
-            let expensesByCategory = {};
+            let totalIncome = 0; let totalExpense = 0; let totalSavings = 0; let expensesByCategory = {};
 
             wallets.forEach(w => totalSavings += parseInt(w.balance));
             transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -333,6 +327,7 @@
             document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
             document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
 
+            // Wallets Box
             const walletsListDiv = document.getElementById('wallets-list');
             walletsListDiv.innerHTML = '';
             wallets.forEach(w => {
@@ -350,9 +345,10 @@
                 `;
             });
 
+            // Recent Tx
             const recentDiv = document.getElementById('recent-tx-list');
             recentDiv.innerHTML = '';
-            let recentTxs = transactions.slice(0, 6);
+            let recentTxs = transactions.slice(0, 5);
             if (recentTxs.length === 0) {
                 recentDiv.innerHTML = '<div class="empty-state">📮 No transactions yet</div>';
             } else {
@@ -372,6 +368,7 @@
                 });
             }
 
+            // Stats
             const statsDiv = document.getElementById('stats-list');
             statsDiv.innerHTML = '';
             let maxExpense = Math.max(...Object.values(expensesByCategory), 0);
@@ -394,93 +391,13 @@
 
             localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
             localStorage.setItem('finzen_tx', JSON.stringify(transactions));
+            renderAllTransactions();
         }
 
         function updateCurrentBalanceDisplay() {
             let selectedId = document.getElementById('main-wallet-select').value;
             let w = wallets.find(w => w.id === selectedId);
             document.getElementById('display-current-balance').innerText = w ? formatRp(w.balance) : 'Rp 0';
-        }
-
-        // 4. FUNGSI CRUD & SUPABASE
-        async function saveTransaction() {
-            let type = document.querySelector('input[name="tx-type"]:checked').value;
-            let desc = document.getElementById('tx-desc').value;
-            let amount = parseInt(document.getElementById('tx-amount').value);
-            let date = document.getElementById('tx-date').value;
-            let category = document.getElementById('tx-category').value;
-            let walletId = document.getElementById('tx-wallet').value;
-            let note = document.getElementById('tx-note').value;
-
-            if(!desc || !amount || !date) { alert("Tolong isi Description, Amount, dan Date ya!"); return; }
-
-            // Insert ke Supabase pakai supabaseClient
-            const { error } = await supabaseClient
-                .from('transactions')
-                .insert([{ type, description: desc, amount, date, category, wallet_id: walletId, note }]);
-
-            if (error) {
-                console.error("Error dari Supabase:", error);
-                alert("Gagal simpan ke database cloud! Cek console F12.");
-            } else {
-                // Berhasil simpan ke cloud, lanjut update UI lokal
-                let walletIndex = wallets.findIndex(w => w.id === walletId);
-                if (type === 'expense') wallets[walletIndex].balance -= amount;
-                else wallets[walletIndex].balance += amount;
-
-                transactions.push({ id: Date.now(), type, desc, amount, date, category, walletId, note });
-                
-                closeModal('transactionModal');
-                updateDashboard();
-                
-                document.getElementById('tx-desc').value = '';
-                document.getElementById('tx-amount').value = '';
-                alert("Transaksi berhasil masuk cloud dan UI!");
-            }
-        }
-
-        function saveWallet() {
-            let name = document.getElementById('wallet-name').value;
-            let balance = parseInt(document.getElementById('wallet-balance').value);
-            if(!name || isNaN(balance)) { alert("Isi nama dan saldo awalnya!"); return; }
-            wallets.push({ id: 'w' + Date.now(), name, balance });
-            closeModal('walletModal');
-            updateDashboard();
-            document.getElementById('wallet-name').value = '';
-            document.getElementById('wallet-balance').value = '';
-        }
-
-        function saveTransfer() {
-            let fromId = document.getElementById('transfer-from').value;
-            let toId = document.getElementById('transfer-to').value;
-            let amount = parseInt(document.getElementById('transfer-amount').value);
-            let date = document.getElementById('transfer-date').value;
-
-            if(fromId === toId) { alert("Masa transfer ke dompet yang sama wkwk"); return; }
-            if(!amount || !date) { alert("Isi jumlah dan tanggalnya cuy!"); return; }
-
-            let idxFrom = wallets.findIndex(w => w.id === fromId);
-            let idxTo = wallets.findIndex(w => w.id === toId);
-
-            if(wallets[idxFrom].balance < amount) { alert("Saldo nggak cukup!"); return; }
-
-            wallets[idxFrom].balance -= amount;
-            wallets[idxTo].balance += amount;
-            transactions.push({ 
-                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wallets[idxTo].name}`, 
-                amount, date, category: 'Transfer', walletId: fromId, note: '' 
-            });
-
-            closeModal('transferModal');
-            updateDashboard();
-            document.getElementById('transfer-amount').value = '';
-        }
-
-        function deleteWallet(id) {
-            if(confirm("Yakin mau ngapus dompet ini?")) {
-                wallets = wallets.filter(w => w.id !== id);
-                updateDashboard();
-            }
         }
 
         function renderAllTransactions() {
@@ -492,43 +409,180 @@
             if (monthFilter !== 'all') {
                 filteredTxs = transactions.filter(tx => new Date(tx.date).getMonth() == monthFilter);
             }
+
             if (filteredTxs.length === 0) {
                 listDiv.innerHTML = '<div class="empty-state">Kosong nih, gaada transaksi di bulan ini.</div>';
                 return;
             }
+
             filteredTxs.forEach(tx => {
                 let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
                 let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
                 let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
                 listDiv.innerHTML += `
-                    <div class="transaction-item" style="padding: 16px 0;">
-                        <div>
-                            <p style="font-weight: 600; font-size: 15px;">${tx.desc} ${getIcon(tx.category)}</p>
+                    <div class="transaction-item" style="padding: 16px 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="flex:1;">
+                            <p style="font-weight: 600; font-size: 15px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
                             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
                                 <span style="background: var(--bg-rice); padding: 2px 6px; border-radius: 4px;">${w.name}</span> • ${tx.category} • ${tx.date}
                             </p>
                         </div>
-                        <p style="color: ${color}; font-weight: bold; font-size: 15px;">${sign} ${formatRp(tx.amount)}</p>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <p style="color: ${color}; font-weight: bold; font-size: 15px;">${sign} ${formatRp(tx.amount)}</p>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="editTransaction('${tx.id}')" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Edit">✏️</button>
+                                <button onclick="triggerDeleteTx('${tx.id}')" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Delete">🗑️</button>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
         }
 
-        // 5. KONTROL MODAL
-        function openModal(modalId) { 
-            document.getElementById(modalId).style.display = 'flex'; 
-            if(modalId === 'allTxModal') {
-                document.getElementById('filter-month').value = new Date().getMonth();
-                renderAllTransactions();
-            } else if (modalId === 'transactionModal' || modalId === 'transferModal') {
-                document.getElementById('tx-date').valueAsDate = new Date();
-                document.getElementById('transfer-date').valueAsDate = new Date();
+        function editTransaction(id) {
+            let tx = transactions.find(t => t.id == id);
+            if(tx) {
+                editingTxId = id;
+                document.getElementById('tx-modal-title').innerText = "Edit Transaction";
+                document.getElementById(tx.type === 'expense' ? 'type-expense' : 'type-income').checked = true;
+                document.getElementById('tx-desc').value = tx.desc;
+                document.getElementById('tx-amount').value = tx.amount;
+                document.getElementById('tx-date').value = tx.date;
+                document.getElementById('tx-category').value = tx.category;
+                document.getElementById('tx-wallet').value = tx.walletId;
+                document.getElementById('tx-note').value = tx.note || '';
+                
+                openModal('transactionModal');
             }
         }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; } }
 
-        window.onload = () => { updateDashboard(); };
+        async function saveTransaction() {
+            let type = document.querySelector('input[name="tx-type"]:checked').value;
+            let desc = document.getElementById('tx-desc').value;
+            let amount = parseInt(document.getElementById('tx-amount').value);
+            let date = document.getElementById('tx-date').value;
+            let category = document.getElementById('tx-category').value;
+            let walletId = document.getElementById('tx-wallet').value;
+            let note = document.getElementById('tx-note').value;
+
+            if(!desc || !amount || !date) { showToast("Tolong isi Description, Amount, dan Date!", true); return; }
+
+            let payload = { type, description: desc, amount, date, category, wallet_id: walletId, note };
+
+            if(editingTxId) {
+                // Update Supabase
+                const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTxId);
+                if (error) { showToast("Gagal update cloud!", true); return; }
+                
+                let idx = transactions.findIndex(t => t.id == editingTxId);
+                transactions[idx] = { id: editingTxId, type, desc, amount, date, category, walletId, note };
+                showToast("Transaksi berhasil diupdate!");
+            } else {
+                // Insert Supabase
+                const { data, error } = await supabaseClient.from('transactions').insert([payload]).select();
+                if (error) { showToast("Gagal simpan ke cloud!", true); return; }
+                
+                let newId = data ? data[0].id : Date.now();
+                transactions.push({ id: newId, type, desc, amount, date, category, walletId, note });
+                
+                let walletIndex = wallets.findIndex(w => w.id === walletId);
+                type === 'expense' ? wallets[walletIndex].balance -= amount : wallets[walletIndex].balance += amount;
+                showToast("Transaksi tersimpan!");
+            }
+
+            editingTxId = null;
+            closeModal('transactionModal');
+            updateDashboard();
+        }
+
+        function triggerDeleteTx(id) {
+            customConfirm(`Yakin mau menghapus transaksi ini?`, async () => {
+                const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+                if (error) { showToast("Gagal hapus dari cloud!", true); return; }
+                
+                transactions = transactions.filter(t => t.id != id);
+                showToast("Transaksi berhasil dihapus!");
+                updateDashboard();
+            });
+        }
+
+        function saveWallet() {
+            let name = document.getElementById('wallet-name').value;
+            let balance = parseInt(document.getElementById('wallet-balance').value);
+            if(!name || isNaN(balance)) { showToast("Isi nama dan saldo awalnya!", true); return; }
+            wallets.push({ id: 'w' + Date.now(), name, balance });
+            closeModal('walletModal');
+            updateDashboard();
+            showToast("Wallet ditambahkan!");
+        }
+
+        function saveTransfer() {
+            let fromId = document.getElementById('transfer-from').value;
+            let toId = document.getElementById('transfer-to').value;
+            let amount = parseInt(document.getElementById('transfer-amount').value);
+            let date = document.getElementById('transfer-date').value;
+
+            if(fromId === toId) { showToast("Masa transfer ke dompet yang sama wkwk", true); return; }
+            if(!amount || !date) { showToast("Isi jumlah dan tanggalnya cuy!", true); return; }
+
+            let idxFrom = wallets.findIndex(w => w.id === fromId);
+            let idxTo = wallets.findIndex(w => w.id === toId);
+            if(wallets[idxFrom].balance < amount) { showToast("Saldo nggak cukup!", true); return; }
+
+            wallets[idxFrom].balance -= amount;
+            wallets[idxTo].balance += amount;
+            transactions.push({ 
+                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wallets[idxTo].name}`, 
+                amount, date, category: 'Transfer', walletId: fromId, note: '' 
+            });
+
+            closeModal('transferModal');
+            updateDashboard();
+            showToast("Transfer berhasil!");
+        }
+
+        function deleteWallet(id) {
+            customConfirm("Yakin mau ngapus dompet ini?", () => {
+                wallets = wallets.filter(w => w.id !== id);
+                updateDashboard();
+                showToast("Wallet dihapus!");
+            });
+        }
+
+        let confirmAction = null; 
+        function customConfirm(message, actionCallback) {
+            document.getElementById('confirm-msg').innerText = message;
+            confirmAction = actionCallback; 
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        function executeConfirm() {
+            if(confirmAction) { confirmAction(); confirmAction = null; }
+            closeModal('confirmModal');
+        }
+
+        function openModal(modalId) { 
+            document.getElementById(modalId).style.display = 'flex'; 
+            if(modalId === 'transactionModal' && !editingTxId) {
+                document.getElementById('tx-modal-title').innerText = "Add Transaction";
+                document.getElementById('tx-desc').value = '';
+                document.getElementById('tx-amount').value = '';
+                document.getElementById('tx-date').valueAsDate = new Date();
+                document.getElementById('tx-note').value = '';
+            } else if (modalId === 'transferModal') {
+                document.getElementById('transfer-date').valueAsDate = new Date();
+                document.getElementById('transfer-amount').value = '';
+            }
+        }
+        function closeModal(modalId) { 
+            document.getElementById(modalId).style.display = 'none'; 
+            if(modalId === 'transactionModal') editingTxId = null;
+        }
+        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingTxId = null; } }
+
+        window.onload = () => { 
+            document.getElementById('filter-month').value = new Date().getMonth();
+            updateDashboard(); 
+        };
     </script>
 </body>
 </html>

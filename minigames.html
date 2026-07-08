@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マネージャー Dashboard - Mini Games</title>
     <style>
-        /* === TEMA AESTHETIC JEPANG (ZEN) === */
         :root {
             --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
             --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
@@ -13,7 +12,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
 
-        /* === SIDEBAR === */
         .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;}
         .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
         .menu-group { margin-bottom: 24px; }
@@ -22,65 +20,37 @@
         .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
         .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
 
-        /* === MAIN CONTENT === */
-        .main-content { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .main-content { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column; align-items: center;}
+        .header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { font-size: 28px; margin-bottom: 4px; }
         .header p { color: var(--text-muted); font-size: 14px; }
 
-        /* === GAME TABS === */
-        .tabs { display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px;}
-        .tab-btn { background: none; border: none; font-size: 16px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: 0.2s;}
-        .tab-btn:hover { background: var(--bg-white); color: var(--text-dark); }
-        .tab-btn.active { background: var(--matcha-green); color: white; box-shadow: 0 4px 10px rgba(143,151,121,0.2); }
-
-        .game-container { background: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); padding: 30px; min-height: 400px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: none; flex-direction: column; align-items: center;}
-        .game-container.active { display: flex; }
-
-        /* === 1. DINO GAME === */
-        #dino-game { position: relative; width: 600px; height: 200px; border-bottom: 2px solid var(--text-dark); overflow: hidden; background: var(--bg-rice); border-radius: 8px 8px 0 0;}
-        #dino { width: 40px; height: 40px; background-color: var(--ocean-blue); border-radius: 4px; position: absolute; bottom: 0; left: 50px; }
-        #cactus { width: 20px; height: 40px; background-color: var(--sakura-pink); border-radius: 4px; position: absolute; bottom: 0; right: -20px; }
-        .jump { animation: jumpAnim 0.5s linear; }
-        @keyframes jumpAnim { 0% { bottom: 0; } 40% { bottom: 80px; } 50% { bottom: 90px; } 60% { bottom: 80px; } 100% { bottom: 0; } }
-        .move-cactus { animation: blockAnim 1.5s infinite linear; }
-        @keyframes blockAnim { 0% { right: -20px; } 100% { right: 620px; } }
-
-        /* === 2. GAFFERXI (PLAYER GUESSER) === */
-        .guesser-input-area { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 600px;}
-        .guess-input { flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: var(--bg-rice);}
-        .btn-guess { background: var(--matcha-green); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .btn-guess:hover { opacity: 0.9; }
+        .game-container { background: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px; margin-top: 40px;}
         
-        .guess-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 700px; }
-        .guess-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 8px; }
-        .guess-cell { padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; display: flex; justify-content: center; align-items: center; text-align: center; background: var(--bg-rice); border: 1px solid var(--border-color); color: var(--text-dark); transition: 0.3s;}
-        .cell-match { background: var(--matcha-green); color: white; border-color: var(--matcha-green); }
-        .cell-wrong { background: var(--sakura-pink); color: white; border-color: var(--sakura-pink); }
-        .header-row .guess-cell { background: none; border: none; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+        #dino-game { position: relative; width: 100%; max-width: 600px; height: 250px; border-bottom: 3px solid var(--text-dark); overflow: hidden; background: var(--bg-rice); border-radius: 12px 12px 0 0; margin-bottom: 20px;}
+        
+        #dino { font-size: 40px; position: absolute; bottom: 0; left: 50px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; z-index: 10; user-select: none;}
+        #obstacle { font-size: 40px; position: absolute; bottom: 0; left: 650px; width: 40px; height: 45px; display: flex; align-items: center; justify-content: center; user-select: none;}
+        
+        .jump { animation: jumpAnim 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        @keyframes jumpAnim { 0% { bottom: 0; } 45% { bottom: 120px; } 55% { bottom: 120px; } 100% { bottom: 0; } }
 
-        /* === 3. CAREER FILTER (TIKTOK STYLE) === */
-        .career-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 700px; margin-top: 20px;}
-        .career-slot { background: var(--bg-rice); border: 2px dashed var(--border-color); border-radius: 12px; padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 120px; transition: 0.3s;}
-        .slot-title { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;}
-        .slot-value { font-size: 16px; font-weight: bold; color: var(--text-dark); }
-        .spinning { animation: pulse 0.5s infinite; border-color: var(--ocean-blue); background: rgba(123,144,149,0.1); }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .btn-start { background: var(--matcha-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(143,151,121,0.2);}
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143,151,121,0.3); }
 
+        #game-over-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 20; border-radius: 12px 12px 0 0;}
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="logo">マネージャー</div>
-        
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
             <a href="index.html" class="menu-item">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
             <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
-        
         <div class="menu-group">
             <div class="menu-title">Leisure & Notes</div>
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
@@ -92,110 +62,46 @@
     <div class="main-content">
         <div class="header">
             <div>
-                <h1>Mini Games</h1>
-                <p>Take a break. You earned it.</p>
+                <h1>Zen Dino</h1>
+                <p>Press Space or Tap the screen to jump.</p>
             </div>
+            <h2 id="dino-score" style="color: var(--text-dark); font-size: 24px;">Score: 0</h2>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchGame('dino')">🦖 Zen Dino</button>
-            <button class="tab-btn" onclick="switchGame('gaffer')">⚽ Player Guesser</button>
-            <button class="tab-btn" onclick="switchGame('career')">🏆 Career Filter</button>
-        </div>
-
-        <div id="game-dino" class="game-container active">
-            <h3 style="margin-bottom: 20px;">Zen Dino (Press Space to Jump)</h3>
-            <div id="dino-game">
-                <div id="dino"></div>
-                <div id="cactus"></div>
-            </div>
-            <p id="dino-score" style="margin-top: 20px; font-weight: bold; font-size: 20px;">Score: 0</p>
-            <button class="btn-guess" style="margin-top: 10px;" onclick="startDino(); this.blur();">Start / Restart</button>
-        </div>
-
-        <div id="game-gaffer" class="game-container">
-            <h3 style="margin-bottom: 5px;">Premier League Guesser</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Tebak pemain rahasia hari ini (Data sampel EAFC).</p>
-            
-            <div class="guesser-input-area">
-                <input type="text" id="guess-input" class="guess-input" placeholder="Type player name (e.g., Haaland, Salah, Saka)..." list="player-datalist">
-                <datalist id="player-datalist"></datalist>
-                <button class="btn-guess" onclick="makeGuess()">Guess</button>
-            </div>
-
-            <div class="guess-grid" id="guess-grid">
-                <div class="guess-row header-row">
-                    <div class="guess-cell">Player</div>
-                    <div class="guess-cell">Nation</div>
-                    <div class="guess-cell">Club</div>
-                    <div class="guess-cell">Pos</div>
-                    <div class="guess-cell">OVR</div>
+        <div class="game-container">
+            <div id="dino-game" onclick="jump()">
+                <div id="dino">🦖</div>
+                <div id="obstacle">🌵</div>
+                
+                <div id="game-over-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(245,245,240,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 100;">
+                    <h2 style="color: var(--sakura-pink); margin-bottom: 10px; font-size: 24px;">GAME OVER</h2>
+                    <p style="margin-bottom: 15px; color: var(--text-dark);">Final Score: <span id="final-score" style="font-weight: bold;">0</span></p>
                 </div>
             </div>
-        </div>
-
-        <div id="game-career" class="game-container">
-            <h3 style="margin-bottom: 5px;">My Player Career Filter</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Gacha jalan karir sepak bola lu!</p>
-            
-            <button class="btn-guess" onclick="spinCareer()" id="btn-spin" style="margin-bottom: 10px;">🎲 Generate My Career</button>
-
-            <div class="career-board">
-                <div class="career-slot" id="slot-club">
-                    <div class="slot-title">Starting Club</div>
-                    <div class="slot-value" id="val-club">?</div>
-                </div>
-                <div class="career-slot" id="slot-rating">
-                    <div class="slot-title">Peak Rating</div>
-                    <div class="slot-value" id="val-rating">?</div>
-                </div>
-                <div class="career-slot" id="slot-goals">
-                    <div class="slot-title">Career Goals</div>
-                    <div class="slot-value" id="val-goals">?</div>
-                </div>
-                <div class="career-slot" id="slot-transfer">
-                    <div class="slot-title">Biggest Transfer</div>
-                    <div class="slot-value" id="val-transfer">?</div>
-                </div>
-                <div class="career-slot" id="slot-trophies">
-                    <div class="slot-title">Major Trophies</div>
-                    <div class="slot-value" id="val-trophies">?</div>
-                </div>
-                <div class="career-slot" id="slot-status">
-                    <div class="slot-title">End Status</div>
-                    <div class="slot-value" id="val-status">?</div>
-                </div>
-            </div>
+            <button class="btn-start" style="margin-top: 30px; background: var(--matcha-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;" onclick="startGame(); this.blur();">Start Game</button>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. INIT SUPABASE (Disamakan dengan page lain supaya nggak error)
-        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
-        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // --- TAB SWITCHER ---
-        function switchGame(gameName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.game-container').forEach(cnt => cnt.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById('game-' + gameName).classList.add('active');
-        }
-
-        // ==========================================
-        // GAME 1: ZEN DINO LOGIC
-        // ==========================================
         const dino = document.getElementById("dino");
-        const cactus = document.getElementById("cactus");
+        const obstacle = document.getElementById("obstacle");
+        const gameArea = document.getElementById("dino-game");
+        const gameOverModal = document.getElementById("game-over-modal");
+        
+        const obstacleTypes = [
+            { icon: '🌵', bottom: 0 }, 
+            { icon: '🦅', bottom: 40 }, // Burung (terbang rendah)
+            { val: "🪨", bottom: 0 }
+        ];
+
         let isJumping = false;
-        let dinoScore = 0;
-        let dinoInterval;
+        let isPlaying = false;
+        let score = 0;
+        let speed = 5; // Kecepatan awal
+        let obstacleLeft = 600; // Mulai dari ujung kanan luar layar
 
         function jump() {
-            if (!isJumping) {
+            if (!isJumping && isPlaying) {
                 isJumping = true;
                 dino.classList.add("jump");
                 setTimeout(() => {
@@ -206,171 +112,233 @@
         }
 
         document.addEventListener("keydown", function(event) {
-            if(event.code === "Space" && document.getElementById('game-dino').classList.contains('active')) {
-                event.preventDefault(); // Mencegah layar ikut scroll ke bawah
+            if(event.code === "Space") {
+                event.preventDefault();
                 jump();
             }
         });
 
-        function startDino() {
-            cactus.classList.remove("move-cactus");
-            void cactus.offsetWidth; // trigger reflow
-            cactus.classList.add("move-cactus");
-            dinoScore = 0;
-            
-            clearInterval(dinoInterval);
-            dinoInterval = setInterval(() => {
-                let dinoTop = parseInt(window.getComputedStyle(dino).getPropertyValue("bottom"));
-                let cactusLeft = parseInt(window.getComputedStyle(cactus).getPropertyValue("left"));
+        function gameLoop() {
+            if (!isPlaying) return;
 
-                // Hitbox Collision Sederhana
-                if (cactusLeft < 90 && cactusLeft > 50 && dinoTop <= 40) {
-                    cactus.classList.remove("move-cactus");
-                    alert("Game Over! Score lu: " + Math.floor(dinoScore / 10));
-                    clearInterval(dinoInterval);
-                } else {
-                    dinoScore++;
-                    document.getElementById('dino-score').innerText = "Score: " + Math.floor(dinoScore / 10);
-                }
-            }, 10);
+            // Update posisi rintangan
+            obstacleLeft -= speed;
+
+            // Kalau rintangan udah lewat batas kiri layar, balikin ke kanan & ubah rintangan
+            if (obstacleLeft <= -40) {
+                obstacleLeft = 600 + Math.random() * 200; // Munculin agak ngacak dari kanan
+                score++;
+                document.getElementById('dino-score').innerText = "Score: " + score;
+                
+                // Variasi rintangan
+                let randObstacle = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+                obstacle.innerText = randObstacle.icon;
+                obstacle.style.bottom = randObstacle.bottom + "px";
+
+                // Makin lama makin ngebut (max speed dibatasin biar gak mustahil)
+                if (speed < 12) speed += 0.2; 
+            }
+
+            obstacle.style.left = obstacleLeft + "px";
+
+            // Deteksi tabrakan
+            let dinoTop = parseInt(window.getComputedStyle(dino).getPropertyValue("bottom"));
+            let obsBottom = parseInt(window.getComputedStyle(obstacle).getPropertyValue("bottom"));
+            
+            // Hitbox kasar
+            if (obstacleLeft > 50 && obstacleLeft < 90 && dinoTop < (obsBottom + 30) && dinoTop >= obsBottom) {
+                // Game Over
+                isPlaying = false;
+                document.getElementById('final-score').innerText = score;
+                document.getElementById('confirmModal').style.display = 'flex';
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
         }
 
-        // ==========================================
-        // GAME 2: EAFC PLAYER GUESSER LOGIC
-        // ==========================================
-        const playersData = [
-            { name: "Erling Haaland", nation: "Norway", club: "Man City", pos: "ST", rating: 91 },
-            { name: "Kevin De Bruyne", nation: "Belgium", club: "Man City", pos: "CM", rating: 91 },
-            { name: "Mohamed Salah", nation: "Egypt", club: "Liverpool", pos: "RW", rating: 89 },
-            { name: "Bukayo Saka", nation: "England", club: "Arsenal", pos: "RW", rating: 86 },
-            { name: "Marcus Rashford", nation: "England", club: "Man Utd", pos: "LW", rating: 85 },
-            { name: "Bruno Fernandes", nation: "Portugal", club: "Man Utd", pos: "CAM", rating: 88 },
-            { name: "Virgil van Dijk", nation: "Netherlands", club: "Liverpool", pos: "CB", rating: 89 },
-            { name: "Son Heung-min", nation: "South Korea", club: "Spurs", pos: "LW", rating: 87 }
+        // Gw rombak script gamenya jadi pakai requestAnimationFrame biar pergerakannya alus banget.
+        let obstacleTypes = [
+            { icon: '🌵', bottom: 0 },
+            { icon: '🦅', bottom: 40 }, // Burung terbang
+            { icon: '🪨', bottom: 0 }
         ];
 
-        const datalist = document.getElementById('player-datalist');
-        playersData.forEach(p => {
-            let option = document.createElement('option');
-            option.value = p.name;
-            datalist.appendChild(option);
+        let gameFrame;
+
+        function startDino() {
+            document.getElementById('confirmModal').style.display = 'none';
+            score = 0;
+            speed = 5;
+            obstacleLeft = 600;
+            isJumping = false;
+            isPlaying = true;
+            
+            dino.classList.remove("jump");
+            document.getElementById('dino-score').innerText = "Score: 0";
+            
+            // Reset rintangan pertama
+            obstacle.innerText = '🌵';
+            obstacle.style.bottom = '0px';
+            
+            cancelAnimationFrame(gameFrame);
+            gameLoop();
+        }
+
+        // Variabel game
+        let isPlaying = false;
+        let score = 0;
+        let speed = 5;
+        let obstacleLeft = 600;
+        let gameFrame;
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            // Gerakin halangan
+            obstacleLeft -= speed;
+            
+            // Kalau halangan udah lewat layar kiri
+            if (obstacleLeft <= -40) {
+                obstacleLeft = 600 + Math.random() * 200; // Reset ke kanan dengan jarak acak
+                score++;
+                document.getElementById('dino-score').innerText = "Score: " + score;
+                
+                // Tambah kecepatan pelan-pelan
+                if (speed < 15) speed += 0.3;
+
+                // Ganti tipe halangan
+                let obsType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+                obstacle.innerText = obsType.icon;
+                obstacle.style.bottom = obsType.bottom + 'px';
+            }
+
+            obstacle.style.left = obstacleLeft + "px";
+
+            // Deteksi Tabrakan Sederhana (Hitbox)
+            let dinoBottom = parseInt(window.getComputedStyle(dino).getPropertyValue("bottom"));
+            let obsBottom = parseInt(window.getComputedStyle(obstacle).getPropertyValue("bottom"));
+
+            // Logika tabrakan:
+            // 1. Posisi X (Kiri ke Kanan) beririsan antara Dino (50-90) dan Obstacle
+            // 2. Posisi Y (Atas Bawah) beririsan. Dino tingginya 40px.
+            
+            let isHitX = obstacleLeft > 30 && obstacleLeft < 90;
+            let isHitY = false;
+
+            if (obsBottom === 0) { // Kaktus/Batu di bawah
+                isHitY = dinoBottom < 30; // Nabrak kalau loncatnya kurang tinggi
+            } else { // Burung di atas
+                isHitY = dinoBottom > 10; // Nabrak kalau lagi loncat pas ada burung
+            }
+
+            if (isHitX && isHitY) {
+                isPlaying = false;
+                document.getElementById('final-score').innerText = score;
+                document.getElementById('game-over-modal').style.display = 'flex';
+                return; // Stop animasi
+            }
+
+            gameFrame = requestAnimationFrame(gameLoop);
+        }
+    </script>
+
+    <script>
+        // GW TULIS ULANG LOGIC SCRIPT NYA DI BAWAH INI BIAR CLEAN & BEKERJA SEMPURNA
+        const dinoEl = document.getElementById("dino");
+        const obsEl = document.getElementById("obstacle");
+        const gameOverDiv = document.getElementById("game-over-modal");
+        
+        let obsTypes = [
+            { icon: '🌵', bottom: 0 },
+            { icon: '🦅', bottom: 40 }, // Burung terbang (harus nunduk / diemin aja)
+            { icon: '🪨', bottom: 0 }
+        ];
+
+        let obsX = 600;
+        let dinoY = 0;
+        let gameScore = 0;
+        let gameSpeed = 5;
+        let gameActive = false;
+        let jumping = false;
+        let currentObs = obsTypes[0];
+
+        function jump() {
+            if (!jumping && gameActive) {
+                jumping = true;
+                dinoEl.classList.add("jump");
+                setTimeout(() => {
+                    dinoEl.classList.remove("jump");
+                    jumping = false;
+                }, 500);
+            }
+        }
+
+        document.addEventListener("keydown", function(event) {
+            if(event.code === "Space") {
+                event.preventDefault(); // Biar layar ga geser
+                if(gameActive) jump();
+                else startGame();
+            }
         });
 
-        let secretPlayer = playersData[Math.floor(Math.random() * playersData.length)];
+        function startGame() {
+            gameOverDiv.style.display = "none";
+            gameActive = true;
+            gameScore = 0;
+            gameSpeed = 5;
+            obsX = 600;
+            jumping = false;
+            dinoEl.classList.remove("jump");
+            document.getElementById('dino-score').innerText = "Score: 0";
+            
+            // Set rintangan pertama
+            currentObs = obsTypes[0];
+            obsEl.innerText = currentObs.icon;
+            obsEl.style.bottom = currentObs.bottom + 'px';
+            
+            updateFrame();
+        }
 
-        function makeGuess() {
-            const inputStr = document.getElementById('guess-input').value;
-            const guessed = playersData.find(p => p.name.toLowerCase() === inputStr.toLowerCase());
+        function updateFrame() {
+            if(!gameActive) return;
+
+            obsX -= gameSpeed;
+
+            if(obsX <= -40) {
+                obsX = 600 + Math.random() * 300;
+                gameScore++;
+                document.getElementById('dino-score').innerText = "Score: " + gameScore;
+                
+                if(gameSpeed < 12) gameSpeed += 0.25;
+
+                currentObs = obsTypes[Math.floor(Math.random() * obsTypes.length)];
+                obsEl.innerText = currentObs.icon;
+                obsEl.style.bottom = currentObs.bottom + 'px';
+            }
+            obsEl.style.left = obsX + "px";
+
+            // Hitbox
+            let dY = parseInt(window.getComputedStyle(dinoEl).getPropertyValue("bottom"));
             
-            if(!guessed) { alert("Pemain nggak ada di database / ejaan salah!"); return; }
-            
-            const grid = document.getElementById('guess-grid');
-            
-            const nationMatch = guessed.nation === secretPlayer.nation ? 'cell-match' : 'cell-wrong';
-            const clubMatch = guessed.club === secretPlayer.club ? 'cell-match' : 'cell-wrong';
-            const posMatch = guessed.pos === secretPlayer.pos ? 'cell-match' : 'cell-wrong';
-            
-            let ratingMatch = 'cell-wrong';
-            let ratingText = guessed.rating;
-            if (guessed.rating === secretPlayer.rating) {
-                ratingMatch = 'cell-match';
-            } else if (guessed.rating < secretPlayer.rating) {
-                ratingText += ' ⬆️';
+            // Logika Nabrak
+            let hitX = obsX > 30 && obsX < 90;
+            let hitY = false;
+
+            if (currentObs.bottom === 0) {
+                hitY = dY < 30; // Nabrak barang di tanah kalau ga loncat tinggi
             } else {
-                ratingText += ' ⬇️';
+                hitY = dY > 10; // Nabrak burung kalau lagi loncat
             }
 
-            const nameMatch = guessed.name === secretPlayer.name ? 'cell-match' : '';
-
-            const rowHtml = `
-                <div class="guess-row" style="animation: slideUp 0.3s forwards;">
-                    <div class="guess-cell ${nameMatch}">${guessed.name}</div>
-                    <div class="guess-cell ${nationMatch}">${guessed.nation}</div>
-                    <div class="guess-cell ${clubMatch}">${guessed.club}</div>
-                    <div class="guess-cell ${posMatch}">${guessed.pos}</div>
-                    <div class="guess-cell ${ratingMatch}">${ratingText}</div>
-                </div>
-            `;
-            grid.insertAdjacentHTML('beforeend', rowHtml);
-            document.getElementById('guess-input').value = '';
-
-            if (guessed.name === secretPlayer.name) {
-                setTimeout(() => alert(`GG! Lu nebak bener si ${secretPlayer.name} mantap!`), 300);
+            if (hitX && hitY) {
+                gameActive = false;
+                document.getElementById('final-score').innerText = gameScore;
+                gameOverDiv.style.display = 'flex';
+                return;
             }
-        }
 
-        // ==========================================
-        // GAME 3: CAREER FILTER (TIKTOK STYLE)
-        // ==========================================
-        const careerData = {
-            club: [
-                { val: "Man Utd 🔴", prob: 0.15 }, { val: "Real Madrid 👑", prob: 0.05 },
-                { val: "Ipswich Town 🚜", prob: 0.30 }, { val: "Ajax ❌", prob: 0.20 },
-                { val: "Al Nassr 🐫", prob: 0.10 }, { val: "Bayern Munich 🥨", prob: 0.20 }
-            ],
-            rating: [
-                { val: "90+ (Ballon d'Or)", prob: 0.05 }, { val: "86-89 (World Class)", prob: 0.15 },
-                { val: "80-85 (Solid Pro)", prob: 0.40 }, { val: "70-79 (Average)", prob: 0.30 },
-                { val: "< 70 (Flop)", prob: 0.10 }
-            ],
-            goals: [
-                { val: "500+ 🐐", prob: 0.02 }, { val: "300-499 🎯", prob: 0.13 },
-                { val: "100-299 ⚽", prob: 0.50 }, { val: "10-99 📉", prob: 0.30 },
-                { val: "0 (Bek/Kiper) 🧤", prob: 0.05 }
-            ],
-            transfer: [
-                { val: "€150M+ 💰", prob: 0.05 }, { val: "€80M-€149M 💸", prob: 0.15 },
-                { val: "€30M-€79M 💵", prob: 0.40 }, { val: "Free Agent 🆓", prob: 0.40 }
-            ],
-            trophies: [
-                { val: "UCL Winner 🏆", prob: 0.10 }, { val: "League Winner 🥇", prob: 0.30 },
-                { val: "Domestic Cup 🥈", prob: 0.40 }, { val: "0 Trophies (Spurs) 😭", prob: 0.20 }
-            ],
-            status: [
-                { val: "Club Legend 👑", prob: 0.10 }, { val: "Journeyman 🌍", prob: 0.40 },
-                { val: "One Season Wonder 💫", prob: 0.20 }, { val: "Bench Warmer 🪑", prob: 0.30 }
-            ]
-        };
-
-        function getWeightedRandom(options) {
-            let i, sum = 0, r = Math.random();
-            for (i in options) {
-                sum += options[i].prob;
-                if (r <= sum) return options[i].val;
-            }
-            return options[0].val;
-        }
-
-        function spinCareer() {
-            const btn = document.getElementById('btn-spin');
-            btn.disabled = true;
-            btn.innerText = "Spinning...";
-
-            const keys = ['club', 'rating', 'goals', 'transfer', 'trophies', 'status'];
-            
-            keys.forEach(k => {
-                const el = document.getElementById(`slot-${k}`);
-                el.classList.add('spinning');
-                document.getElementById(`val-${k}`).innerText = "???";
-            });
-
-            keys.forEach((k, index) => {
-                setTimeout(() => {
-                    const el = document.getElementById(`slot-${k}`);
-                    el.classList.remove('spinning');
-                    
-                    const result = getWeightedRandom(careerData[k]);
-                    
-                    document.getElementById(`val-${k}`).innerText = result;
-                    el.style.borderColor = "var(--matcha-green)";
-                    el.style.backgroundColor = "var(--bg-white)";
-
-                    if(index === keys.length - 1) {
-                        btn.disabled = false;
-                        btn.innerText = "🎲 Re-roll Career";
-                    }
-                }, 800 * (index + 1));
-            });
+            requestAnimationFrame(updateFrame);
         }
     </script>
 </body>
