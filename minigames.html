@@ -85,7 +85,7 @@
             <div class="menu-title">Leisure & Notes</div>
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
             <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-            <a href="minigames.html" class="menu-item">Mini Games</a>
+            <a href="minigames.html" class="menu-item active">Mini Games</a>
         </div>
     </div>
 
@@ -131,7 +131,7 @@
                     <div class="guess-cell">Pos</div>
                     <div class="guess-cell">OVR</div>
                 </div>
-                </div>
+            </div>
         </div>
 
         <div id="game-career" class="game-container">
@@ -167,10 +167,15 @@
                 </div>
             </div>
         </div>
-
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // 1. INIT SUPABASE (Disamakan dengan page lain supaya nggak error)
+        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
+        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
         // --- TAB SWITCHER ---
         function switchGame(gameName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -202,7 +207,7 @@
 
         document.addEventListener("keydown", function(event) {
             if(event.code === "Space" && document.getElementById('game-dino').classList.contains('active')) {
-                event.preventDefault(); // Tambahin baris ini biar layar ga ikut scroll
+                event.preventDefault(); // Mencegah layar ikut scroll ke bawah
                 jump();
             }
         });
@@ -221,7 +226,7 @@
                 // Hitbox Collision Sederhana
                 if (cactusLeft < 90 && cactusLeft > 50 && dinoTop <= 40) {
                     cactus.classList.remove("move-cactus");
-                    alert("Game Over! Score lu: " + dinoScore);
+                    alert("Game Over! Score lu: " + Math.floor(dinoScore / 10));
                     clearInterval(dinoInterval);
                 } else {
                     dinoScore++;
@@ -233,7 +238,6 @@
         // ==========================================
         // GAME 2: EAFC PLAYER GUESSER LOGIC
         // ==========================================
-        // Ini sampel data statis (lu bisa ganti pakai fetch API JSON EAFC nanti)
         const playersData = [
             { name: "Erling Haaland", nation: "Norway", club: "Man City", pos: "ST", rating: 91 },
             { name: "Kevin De Bruyne", nation: "Belgium", club: "Man City", pos: "CM", rating: 91 },
@@ -245,7 +249,6 @@
             { name: "Son Heung-min", nation: "South Korea", club: "Spurs", pos: "LW", rating: 87 }
         ];
 
-        // Setup datalist buat autocomplete
         const datalist = document.getElementById('player-datalist');
         playersData.forEach(p => {
             let option = document.createElement('option');
@@ -253,9 +256,7 @@
             datalist.appendChild(option);
         });
 
-        // Pilih pemain rahasia secara acak
         let secretPlayer = playersData[Math.floor(Math.random() * playersData.length)];
-        let guessCount = 0;
 
         function makeGuess() {
             const inputStr = document.getElementById('guess-input').value;
@@ -265,12 +266,10 @@
             
             const grid = document.getElementById('guess-grid');
             
-            // Cek kesamaan tiap atribut
             const nationMatch = guessed.nation === secretPlayer.nation ? 'cell-match' : 'cell-wrong';
             const clubMatch = guessed.club === secretPlayer.club ? 'cell-match' : 'cell-wrong';
             const posMatch = guessed.pos === secretPlayer.pos ? 'cell-match' : 'cell-wrong';
             
-            // Cek rating (Arrow up/down)
             let ratingMatch = 'cell-wrong';
             let ratingText = guessed.rating;
             if (guessed.rating === secretPlayer.rating) {
@@ -283,7 +282,6 @@
 
             const nameMatch = guessed.name === secretPlayer.name ? 'cell-match' : '';
 
-            // Inject baris baru
             const rowHtml = `
                 <div class="guess-row" style="animation: slideUp 0.3s forwards;">
                     <div class="guess-cell ${nameMatch}">${guessed.name}</div>
@@ -304,7 +302,6 @@
         // ==========================================
         // GAME 3: CAREER FILTER (TIKTOK STYLE)
         // ==========================================
-        // Sistem probabilitas. (Prob total harus 1.0)
         const careerData = {
             club: [
                 { val: "Man Utd 🔴", prob: 0.15 }, { val: "Real Madrid 👑", prob: 0.05 },
@@ -335,14 +332,13 @@
             ]
         };
 
-        // Fungsi pencari hasil berdasarkan persentase (weight)
         function getWeightedRandom(options) {
             let i, sum = 0, r = Math.random();
             for (i in options) {
                 sum += options[i].prob;
                 if (r <= sum) return options[i].val;
             }
-            return options[0].val; // Fallback
+            return options[0].val;
         }
 
         function spinCareer() {
@@ -352,20 +348,17 @@
 
             const keys = ['club', 'rating', 'goals', 'transfer', 'trophies', 'status'];
             
-            // Bikin efek loading muter-muter
             keys.forEach(k => {
                 const el = document.getElementById(`slot-${k}`);
                 el.classList.add('spinning');
                 document.getElementById(`val-${k}`).innerText = "???";
             });
 
-            // Reveal satu-satu (Delay per slot)
             keys.forEach((k, index) => {
                 setTimeout(() => {
                     const el = document.getElementById(`slot-${k}`);
                     el.classList.remove('spinning');
                     
-                    // Generate hasil pakai probabilitas
                     const result = getWeightedRandom(careerData[k]);
                     
                     document.getElementById(`val-${k}`).innerText = result;
@@ -376,10 +369,9 @@
                         btn.disabled = false;
                         btn.innerText = "🎲 Re-roll Career";
                     }
-                }, 800 * (index + 1)); // Tiap 0.8 detik muncul satu
+                }, 800 * (index + 1));
             });
         }
-
     </script>
 </body>
 </html>

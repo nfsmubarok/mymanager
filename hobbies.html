@@ -88,7 +88,7 @@
         
         <div class="menu-group">
             <div class="menu-title">Leisure & Notes</div>
-            <a href="hobbies.html" class="menu-item">My Hobbies</a>
+            <a href="hobbies.html" class="menu-item active">My Hobbies</a>
             <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
             <a href="minigames.html" class="menu-item">Mini Games</a>
         </div>
@@ -192,7 +192,13 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
+        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
+        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
         // Setup Data Local Storage
         let hobbies = JSON.parse(localStorage.getItem('finzen_hobbies')) || [];
         let activeEditId = null;
@@ -302,7 +308,7 @@
             openModal('hobbyModal');
         }
 
-        function saveHobby() {
+        async function saveHobby() {
             const title = document.getElementById('hobby-title').value;
             const type = document.getElementById('hobby-type').value;
             const status = document.getElementById('hobby-status').value;
@@ -314,11 +320,21 @@
             const payload = { title, type, status, rating, review };
 
             if(activeEditId) {
-                // Update
+                // Update Lokal (biar gampang di UI lu)
                 const idx = hobbies.findIndex(h => h.id === activeEditId);
                 hobbies[idx] = { ...hobbies[idx], ...payload };
             } else {
-                // Bikin baru
+                // Bikin baru dan lempar ke Supabase
+                const { error } = await supabaseClient
+                    .from('hobbies')
+                    .insert([payload]);
+
+                if (error) {
+                    console.error("Error dari Supabase:", error);
+                    alert("Gagal simpan hobby ke database cloud! Cek console F12.");
+                    return; // Berhenti kalau error
+                }
+                
                 payload.id = Date.now();
                 hobbies.push(payload);
             }

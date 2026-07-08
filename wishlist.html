@@ -75,7 +75,6 @@
 </head>
 <body>
 
-    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="logo">マネージャー</div>
         
@@ -83,7 +82,7 @@
             <div class="menu-title">Main Dashboard</div>
             <a href="index.html" class="menu-item">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
-            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+            <a href="wishlist.html" class="menu-item active">Wishlist Tracker</a>
         </div>
         
         <div class="menu-group">
@@ -94,7 +93,6 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="header">
             <div>
@@ -105,15 +103,9 @@
         </div>
 
         <div class="wishlist-grid" id="wishlist-container">
-            <!-- Wishlist cards will be injected here via JS -->
-        </div>
+            </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- MODALS -->
-    <!-- ============================================== -->
-
-    <!-- Modal 1: Add New Wish -->
     <div id="addWishModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -143,7 +135,6 @@
         </div>
     </div>
 
-    <!-- Modal 2: Edit & Update Progress -->
     <div id="editWishModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -160,8 +151,7 @@
             <div class="form-group">
                 <label>Action Plans Check</label>
                 <div class="edit-checklist" id="edit-wish-plans">
-                    <!-- Checkboxes injected here -->
-                </div>
+                    </div>
             </div>
 
             <div class="modal-actions" style="justify-content: space-between;">
@@ -174,7 +164,6 @@
         </div>
     </div>
 
-    <!-- Modal 3: Custom Confirm (Smooth Aesthetic) -->
     <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
         <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
             <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
@@ -187,11 +176,14 @@
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- JAVASCRIPT LOGIC -->
-    <!-- ============================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Data dari Local Storage
+        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
+        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
+        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. DATA UTAMA (Bersih)
         let wishlists = JSON.parse(localStorage.getItem('finzen_wishlists')) || [];
         let activeEditId = null; 
 
@@ -221,7 +213,7 @@
             }
 
             wishlists.forEach(wish => {
-                let percent = (wish.currentAmount / wish.targetAmount) * 100;
+                let percent = wish.targetAmount > 0 ? (wish.currentAmount / wish.targetAmount) * 100 : 0;
                 if (percent > 100) percent = 100;
                 
                 let plansHtml = '';
@@ -276,7 +268,7 @@
             openModal('addWishModal');
         }
 
-        function saveNewWish() {
+        async function saveNewWish() {
             const title = document.getElementById('wish-title').value;
             const targetAmount = parseInt(document.getElementById('wish-target').value);
             const currentAmount = parseInt(document.getElementById('wish-current').value) || 0;
@@ -293,13 +285,27 @@
                 });
             }
 
-            const newWish = { id: Date.now(), title, targetAmount, currentAmount, plans: plansArray };
+            // Insert ke Supabase
+            const { error } = await supabaseClient
+                .from('wishlists')
+                .insert([{ 
+                    title: title, 
+                    target_amount: targetAmount, 
+                    current_amount: currentAmount,
+                    plans: JSON.stringify(plansArray) // Dirubah jadi string JSON biar aman masuk database
+                }]);
 
-            wishlists.push(newWish);
-            localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
-            
-            closeModal('addWishModal');
-            renderWishlists();
+            if (error) {
+                console.error("Error dari Supabase:", error);
+                alert("Gagal simpan wishlist ke database cloud! Cek console F12.");
+            } else {
+                const newWish = { id: Date.now(), title, targetAmount, currentAmount, plans: plansArray };
+                wishlists.push(newWish);
+                localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+                
+                closeModal('addWishModal');
+                renderWishlists();
+            }
         }
 
         // Edit Modal
@@ -351,7 +357,7 @@
             renderWishlists();
         }
 
-        // Custom Confirm & Delete Logic (DIJAMIN JALAN)
+        // Custom Confirm & Delete Logic
         let confirmAction = null; 
         
         function customConfirm(message, actionCallback) {
@@ -360,22 +366,19 @@
             document.getElementById('confirmModal').style.display = 'flex';
         }
 
-        // Fungsi ini dipanggil dari onclick tombol "Yes, Delete" di HTML
         function executeConfirm() {
             if(confirmAction) {
                 confirmAction(); 
-                confirmAction = null; // Clear setelah jalan
+                confirmAction = null; 
             }
             closeModal('confirmModal');
         }
 
         function triggerDeleteWish() {
             customConfirm(`Yakin mau menghapus wishlist ini?`, () => {
-                // Hapus data berdasarkan ID yang lagi aktif
                 wishlists = wishlists.filter(w => w.id !== activeEditId);
                 localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
                 
-                // Tutup modal edit & refresh layar
                 closeModal('editWishModal');
                 renderWishlists();
             });
@@ -385,7 +388,6 @@
         function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
         
-        // Tutup modal kalau klik area kosong, kecuali kalau lagi buka confirmModal
         window.onclick = function(event) { 
             if (event.target.classList.contains('modal-overlay')) { 
                 event.target.style.display = "none"; 

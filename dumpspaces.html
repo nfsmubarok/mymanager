@@ -87,7 +87,6 @@
 </head>
 <body>
 
-    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="logo">マネージャー</div>
         
@@ -101,12 +100,11 @@
         <div class="menu-group">
             <div class="menu-title">Leisure & Notes</div>
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
-            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+            <a href="dumpspaces.html" class="menu-item active">Dumpspaces</a>
             <a href="minigames.html" class="menu-item">Mini Games</a>
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="header">
             <div>
@@ -117,15 +115,9 @@
         </div>
 
         <div class="masonry-grid" id="dumps-container">
-            <!-- Dump cards will be injected here via JS -->
-        </div>
+            </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- MODALS -->
-    <!-- ============================================== -->
-
-    <!-- Modal 1: Add Dump -->
     <div id="dumpModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -142,25 +134,21 @@
                 </select>
             </div>
 
-            <!-- Field: General Title -->
             <div class="form-group">
                 <label id="label-title">Title (Optional)</label>
                 <input type="text" id="dump-title" class="form-input" placeholder="Give it a title...">
             </div>
 
-            <!-- Field: Note Content -->
             <div class="form-group" id="field-note">
                 <label>Note Content</label>
                 <textarea id="dump-content" class="form-input" rows="6" placeholder="Tulis ide, *snippet code*, atau catatan disini..."></textarea>
             </div>
 
-            <!-- Field: Link URL -->
             <div class="form-group" id="field-link" style="display: none;">
                 <label>URL / Link</label>
                 <input type="url" id="dump-url" class="form-input" placeholder="https://...">
             </div>
 
-            <!-- Field: Image URL -->
             <div class="form-group" id="field-image" style="display: none;">
                 <label>Image Address (URL)</label>
                 <input type="url" id="dump-img-url" class="form-input" placeholder="https://.../image.png">
@@ -174,7 +162,6 @@
         </div>
     </div>
 
-    <!-- Modal 2: Custom Confirm (Smooth Aesthetic) -->
     <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
         <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
             <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
@@ -187,10 +174,13 @@
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- JAVASCRIPT LOGIC -->
-    <!-- ============================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
+        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
+        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
         // Setup Data Local Storage
         let dumps = JSON.parse(localStorage.getItem('finzen_dumps')) || [];
         
@@ -284,7 +274,7 @@
             openModal('dumpModal');
         }
 
-        function saveDump() {
+        async function saveDump() {
             const type = document.getElementById('dump-type').value;
             const title = document.getElementById('dump-title').value;
             const content = document.getElementById('dump-content').value;
@@ -302,8 +292,21 @@
             const today = new Date();
             const dateStr = today.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
-            const payload = { id: Date.now(), type, title, content, url, date: dateStr };
+            const payload = { type, title, content, url, date: dateStr };
 
+            // Insert ke Supabase
+            const { error } = await supabaseClient
+                .from('dumpspaces')
+                .insert([payload]);
+
+            if (error) {
+                console.error("Error dari Supabase:", error);
+                alert("Gagal simpan dump ke cloud! Cek console.");
+                return;
+            }
+
+            // Update Lokal
+            payload.id = Date.now();
             dumps.push(payload);
             localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
             

@@ -106,7 +106,7 @@
         
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
-            <a href="index.html" class="menu-item active">Money Manager</a>
+            <a href="index.html" class="menu-item">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
             <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
@@ -263,35 +263,36 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. INIT SUPABASE (URL dibenerin, nama variabel supabaseClient)
-        // PERHATIAN: Pastikan Key lu ini bener full sampai ujung ya, kalau kepotong paste ulang!
-        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
-        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3'; 
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // 2. DATA UTAMA
-        // 2. DATA UTAMA (KOSONGAN BUAT DEPLOY)
-        let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
+        // 1. INISIALISASI DATA (Ambil dari LocalStorage atau pakai default lu)
+        let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [
+            { id: 'w1', name: 'BTN', balance: 5000000 },
+            { id: 'w2', name: 'BSI', balance: 2500000 },
+            { id: 'w3', name: 'Dompet', balance: 500000 }
+        ];
+        
         let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
-
+        
+        // Helper: Format Rupiah
         function formatRp(angka) {
             return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
+        // Helper: Dapet Icon buat kategori
         function getIcon(category) {
             const icons = { "Food & Drinks": "🍜", "Transport": "🚗", "Salary": "💵", "Entertainment": "🎮", "Shopping": "🛍️", "Transfer": "🔄" };
             return icons[category] || "📝";
         }
 
-        // 3. FUNGSI RENDER UTAMA
+        // 2. FUNGSI UPDATE UI UTAMA
         function updateDashboard() {
+            // Update Dropdown List Wallets (di atas, di form tx, di form transfer)
             const mainSelect = document.getElementById('main-wallet-select');
             const txWallet = document.getElementById('tx-wallet');
             const tfFrom = document.getElementById('transfer-from');
             const tfTo = document.getElementById('transfer-to');
             
+            // Simpan value yg lagi dipilih biar gak ke-reset
             let currentMainVal = mainSelect.value;
             
             mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
@@ -304,6 +305,7 @@
                 mainSelect.value = currentMainVal;
             }
 
+            // Hitung Data Bulan Ini
             const now = new Date();
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
@@ -313,7 +315,11 @@
             let totalSavings = 0;
             let expensesByCategory = {};
 
+            // Hitung Savings (Semua Wallet)
             wallets.forEach(w => totalSavings += parseInt(w.balance));
+
+            // Filter & Hitung Transaksi
+            // Urutkan dari yang terbaru
             transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             transactions.forEach(tx => {
@@ -322,17 +328,21 @@
                     if (tx.type === 'income') totalIncome += parseInt(tx.amount);
                     if (tx.type === 'expense') {
                         totalExpense += parseInt(tx.amount);
+                        // Grouping buat Stats (Khusus Expense)
                         if (!expensesByCategory[tx.category]) expensesByCategory[tx.category] = 0;
                         expensesByCategory[tx.category] += parseInt(tx.amount);
                     }
                 }
             });
 
+            // Update Angka di Atas
             updateCurrentBalanceDisplay();
             document.getElementById('display-total-income').innerText = formatRp(totalIncome);
             document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
             document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
 
+            // Render Wallets Box (Kanan Bawah)
+            // Render Wallets Box (Kanan Bawah)
             const walletsListDiv = document.getElementById('wallets-list');
             walletsListDiv.innerHTML = '';
             wallets.forEach(w => {
@@ -343,13 +353,14 @@
                             <p style="font-weight: bold; font-size: 16px;">${formatRp(w.balance)}</p>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--matcha-green); color: var(--matcha-green); opacity: 0.15; display: flex; align-items:center; justify-content:center;">💳</div>
-                            <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;" title="Delete Wallet">🗑️</button>
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--matcha-green); color: var(--matcha-green); background-opacity: 0.15; display: flex; align-items:center; justify-content:center;">💳</div>
+                            <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete Wallet">🗑️</button>
                         </div>
                     </div>
                 `;
             });
 
+            // Render Recent Transactions (Max 6)
             const recentDiv = document.getElementById('recent-tx-list');
             recentDiv.innerHTML = '';
             let recentTxs = transactions.slice(0, 6);
@@ -360,27 +371,30 @@
                     let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
                     let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
                     let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
+                    
                     recentDiv.innerHTML += `
                         <div class="transaction-item">
                             <div>
-                                <p style="font-weight: 600; font-size: 14px;">${tx.desc} ${getIcon(tx.category)}</p>
-                                <p style="font-size: 12px; color: var(--text-muted);">${w.name} • ${tx.date}</p>
+                                <p style="font-weight: 600; font-size: 14px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
+                                <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${w.name} • ${tx.date}</p>
                             </div>
-                            <p style="color: ${color}; font-weight: bold;">${sign} ${formatRp(tx.amount)}</p>
+                            <p style="color: ${color}; font-weight: bold; font-size: 14px;">${sign} ${formatRp(tx.amount)}</p>
                         </div>
                     `;
                 });
             }
 
+            // Render Statistics Bar Chart
             const statsDiv = document.getElementById('stats-list');
             statsDiv.innerHTML = '';
             let maxExpense = Math.max(...Object.values(expensesByCategory), 0);
+            
             if (maxExpense === 0) {
                 statsDiv.innerHTML = '<div class="empty-state">No expenses this month. Zen! 🍵</div>';
             } else {
                 for (let cat in expensesByCategory) {
                     let amount = expensesByCategory[cat];
-                    let percent = (amount / maxExpense) * 100;
+                    let percent = (amount / maxExpense) * 100; // Relative to max for better visual scaling
                     statsDiv.innerHTML += `
                         <div class="stat-item">
                             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
@@ -392,6 +406,7 @@
                 }
             }
 
+            // Simpan ke memory browser
             localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
             localStorage.setItem('finzen_tx', JSON.stringify(transactions));
         }
@@ -402,8 +417,8 @@
             document.getElementById('display-current-balance').innerText = w ? formatRp(w.balance) : 'Rp 0';
         }
 
-        // 4. FUNGSI CRUD & SUPABASE
-        async function saveTransaction() {
+        // 3. FUNGSI UNTUK SAVE DATA
+        function saveTransaction() {
             let type = document.querySelector('input[name="tx-type"]:checked').value;
             let desc = document.getElementById('tx-desc').value;
             let amount = parseInt(document.getElementById('tx-amount').value);
@@ -414,41 +429,40 @@
 
             if(!desc || !amount || !date) { alert("Tolong isi Description, Amount, dan Date ya!"); return; }
 
-            // Insert ke Supabase pakai supabaseClient
-            const { error } = await supabaseClient
-                .from('transactions')
-                .insert([{ type, description: desc, amount, date, category, wallet_id: walletId, note }]);
-
-            if (error) {
-                console.error("Error dari Supabase:", error);
-                alert("Gagal simpan ke database cloud! Cek console F12.");
+            // Potong/Tambah saldo Wallet
+            let walletIndex = wallets.findIndex(w => w.id === walletId);
+            if (type === 'expense') {
+                wallets[walletIndex].balance -= amount;
             } else {
-                // Berhasil simpan ke cloud, lanjut update UI lokal
-                let walletIndex = wallets.findIndex(w => w.id === walletId);
-                if (type === 'expense') wallets[walletIndex].balance -= amount;
-                else wallets[walletIndex].balance += amount;
-
-                transactions.push({ id: Date.now(), type, desc, amount, date, category, walletId, note });
-                
-                closeModal('transactionModal');
-                updateDashboard();
-                
-                document.getElementById('tx-desc').value = '';
-                document.getElementById('tx-amount').value = '';
-                alert("Transaksi berhasil masuk cloud dan UI!");
+                wallets[walletIndex].balance += amount;
             }
+
+            // Simpan Transaksi
+            transactions.push({ id: Date.now(), type, desc, amount, date, category, walletId, note });
+            
+            closeModal('transactionModal');
+            updateDashboard();
+            
+            // Bersihin form
+            document.getElementById('tx-desc').value = '';
+            document.getElementById('tx-amount').value = '';
         }
 
         function saveWallet() {
             let name = document.getElementById('wallet-name').value;
             let balance = parseInt(document.getElementById('wallet-balance').value);
+            
             if(!name || isNaN(balance)) { alert("Isi nama dan saldo awalnya!"); return; }
+
             wallets.push({ id: 'w' + Date.now(), name, balance });
             closeModal('walletModal');
             updateDashboard();
+            
             document.getElementById('wallet-name').value = '';
             document.getElementById('wallet-balance').value = '';
         }
+
+        
 
         function saveTransfer() {
             let fromId = document.getElementById('transfer-from').value;
@@ -462,27 +476,27 @@
             let idxFrom = wallets.findIndex(w => w.id === fromId);
             let idxTo = wallets.findIndex(w => w.id === toId);
 
-            if(wallets[idxFrom].balance < amount) { alert("Saldo nggak cukup!"); return; }
+            if(wallets[idxFrom].balance < amount) { alert("Saldo nggak cukup buat transfer!"); return; }
 
+            // Pindah saldo
             wallets[idxFrom].balance -= amount;
             wallets[idxTo].balance += amount;
+
+            // Catat sebagai transaksi khusus
+            let wFromName = wallets[idxFrom].name;
+            let wToName = wallets[idxTo].name;
             transactions.push({ 
-                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wallets[idxTo].name}`, 
+                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wToName}`, 
                 amount, date, category: 'Transfer', walletId: fromId, note: '' 
             });
 
             closeModal('transferModal');
             updateDashboard();
+            
             document.getElementById('transfer-amount').value = '';
         }
 
-        function deleteWallet(id) {
-            if(confirm("Yakin mau ngapus dompet ini?")) {
-                wallets = wallets.filter(w => w.id !== id);
-                updateDashboard();
-            }
-        }
-
+        // 4. FUNGSI ALL TRANSACTIONS (Modal Baru)
         function renderAllTransactions() {
             const listDiv = document.getElementById('all-tx-list');
             const monthFilter = document.getElementById('filter-month').value;
@@ -492,18 +506,21 @@
             if (monthFilter !== 'all') {
                 filteredTxs = transactions.filter(tx => new Date(tx.date).getMonth() == monthFilter);
             }
+
             if (filteredTxs.length === 0) {
                 listDiv.innerHTML = '<div class="empty-state">Kosong nih, gaada transaksi di bulan ini.</div>';
                 return;
             }
+
             filteredTxs.forEach(tx => {
                 let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
                 let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
                 let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
+                
                 listDiv.innerHTML += `
                     <div class="transaction-item" style="padding: 16px 0;">
                         <div>
-                            <p style="font-weight: 600; font-size: 15px;">${tx.desc} ${getIcon(tx.category)}</p>
+                            <p style="font-weight: 600; font-size: 15px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
                             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
                                 <span style="background: var(--bg-rice); padding: 2px 6px; border-radius: 4px;">${w.name}</span> • ${tx.category} • ${tx.date}
                             </p>
@@ -518,9 +535,11 @@
         function openModal(modalId) { 
             document.getElementById(modalId).style.display = 'flex'; 
             if(modalId === 'allTxModal') {
+                // Set filter ke bulan saat ini pas modal dibuka
                 document.getElementById('filter-month').value = new Date().getMonth();
                 renderAllTransactions();
             } else if (modalId === 'transactionModal' || modalId === 'transferModal') {
+                // Set default date ke hari ini
                 document.getElementById('tx-date').valueAsDate = new Date();
                 document.getElementById('transfer-date').valueAsDate = new Date();
             }
@@ -528,7 +547,10 @@
         function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
         window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; } }
 
-        window.onload = () => { updateDashboard(); };
+        // JALANKAN SAAT WEB DIBUKA
+        window.onload = () => {
+            updateDashboard();
+        };
     </script>
 </body>
 </html>

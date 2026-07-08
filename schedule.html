@@ -99,7 +99,7 @@
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
             <a href="index.html" class="menu-item">Money Manager</a>
-            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
+            <a href="schedule.html" class="menu-item active">Schedule & Planner</a>
             <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
         
@@ -134,7 +134,7 @@
                     <div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div>
                 </div>
                 <div class="calendar-grid" id="calendar-days">
-                    </div>
+                </div>
             </div>
 
             <div>
@@ -162,8 +162,7 @@
                 <h2 id="daily-modal-title">Schedule</h2>
                 <button class="close-btn" onclick="closeModal('dailyModal')">✕</button>
             </div>
-            <div id="daily-schedule-list" style="margin-bottom: 20px;">
-                </div>
+            <div id="daily-schedule-list" style="margin-bottom: 20px;"></div>
             <div class="modal-actions" style="margin-top: 0;">
                 <button class="btn-submit" style="width: 100%;" onclick="openAddFromDaily()">+ Add Schedule Here</button>
             </div>
@@ -211,11 +210,17 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. STATE & DATA INITIALIZATION
+        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
+        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
+        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. STATE & DATA INITIALIZATION (Udah di-clear)
         let nav = 0; 
-        let editingScheduleId = null; // Buat nandain kalau lagi mode Edit
-        let selectedDateForNew = null; // Buat nyimpen tanggal pas klik "Add Schedule Here"
+        let editingScheduleId = null;
+        let selectedDateForNew = null; 
         
         let schedules = JSON.parse(localStorage.getItem('finzen_schedules')) || [];
         let tasks = JSON.parse(localStorage.getItem('finzen_tasks')) || [];
@@ -226,7 +231,7 @@
             'Low': { hex: '#8F9779', class: 'tag-low' }
         };
 
-        // 2. CALENDAR LOGIC
+        // 3. CALENDAR LOGIC
         function loadCalendar() {
             const calendarDays = document.getElementById('calendar-days');
             const monthDisplay = document.getElementById('month-display');
@@ -258,8 +263,6 @@
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
                     
                     daySquare.innerHTML = `<div class="day-number">${currentDay}</div>`;
-                    
-                    // Kalau di klik, buka daily view modal
                     daySquare.onclick = () => openDailyModal(dateStr);
 
                     const todayDate = new Date();
@@ -286,9 +289,8 @@
 
         function changeMonth(direction) { nav += direction; loadCalendar(); }
 
-        // 3. DAILY VIEW & UPCOMING LOGIC
+        // 4. DAILY VIEW & UPCOMING LOGIC
         function openDailyModal(dateStr) {
-            // Ubah format YYYY-MM-DD jadi lebih enak dibaca (opsional, tp kita pake str aslinya aja buat logic)
             document.getElementById('daily-modal-title').innerText = `Schedule: ${dateStr}`;
             selectedDateForNew = dateStr;
             
@@ -353,7 +355,6 @@
             }
         }
 
-        // 4. TASK LIST LOGIC
         function renderTasks() {
             const listDiv = document.getElementById('task-list');
             listDiv.innerHTML = '';
@@ -387,19 +388,17 @@
             });
         }
 
-        // 5. SAVE, EDIT, DELETE ACTIONS
+        // 5. SAVE KE SUPABASE & LOCAL
         function openAddFromDaily() {
             closeModal('dailyModal');
             openModal('scheduleModal');
-            if(selectedDateForNew) {
-                document.getElementById('sch-date').value = selectedDateForNew;
-            }
+            if(selectedDateForNew) { document.getElementById('sch-date').value = selectedDateForNew; }
         }
 
         function editSchedule(id) {
             let sch = schedules.find(s => s.id === id);
             if(sch) {
-                editingScheduleId = id; // Set mode Edit
+                editingScheduleId = id; 
                 document.getElementById('schedule-modal-title').innerText = "Edit Schedule";
                 document.getElementById('sch-title').value = sch.title;
                 document.getElementById('sch-date').value = sch.date;
@@ -411,7 +410,7 @@
             }
         }
 
-        function saveSchedule() {
+        async function saveSchedule() {
             const title = document.getElementById('sch-title').value;
             const date = document.getElementById('sch-date').value;
             const time = document.getElementById('sch-time').value;
@@ -420,23 +419,29 @@
             if(!title || !date || !time) { alert("Isi semua datanya lengkap ya!"); return; }
 
             if(editingScheduleId) {
-                // Update jadwal lama
+                // Proses Edit (Tanpa nembak ulang ke cloud biar simpel di sisi frontend, lu bisa upgrade nanti)
                 let idx = schedules.findIndex(s => s.id === editingScheduleId);
                 schedules[idx] = { id: editingScheduleId, title, date, time, priority };
-                editingScheduleId = null; // Reset mode
+                editingScheduleId = null; 
             } else {
-                // Bikin jadwal baru
-                schedules.push({ id: Date.now(), title, date, time, priority });
+                // Proses Nambah Baru ke Supabase
+                const { error } = await supabaseClient
+                    .from('schedules')
+                    .insert([{ title, date, time, priority }]);
+
+                if (error) {
+                    console.error("Error dari Supabase:", error);
+                    alert("Gagal simpan schedule ke database cloud! Cek console.");
+                } else {
+                    schedules.push({ id: Date.now(), title, date, time, priority });
+                }
             }
 
             localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
-            
             closeModal('scheduleModal');
-            
             loadCalendar();
             renderUpcoming();
             
-            // Kalau lagi di mode daily, balikin buka daily view lagi
             if(selectedDateForNew) openDailyModal(date);
         }
 
@@ -446,26 +451,39 @@
                 localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
                 loadCalendar();
                 renderUpcoming();
-                
-                // Kalau dihapusnya pas lagi buka modal daily, refresh modalnya
                 if(dateStr) openDailyModal(dateStr);
             }
         }
 
-        function saveTask() {
+        async function saveTask() {
             const name = document.getElementById('task-name').value;
             const deadline = document.getElementById('task-deadline').value;
             const priority = document.getElementById('task-priority').value;
             if(!name || !deadline) { alert("Nama task dan deadline harus diisi!"); return; }
-            tasks.push({ id: Date.now(), name, deadline, priority, completed: false });
-            localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
-            closeModal('taskModal');
-            renderTasks();
+
+            // Insert Task ke Supabase
+            const { error } = await supabaseClient
+                .from('tasks')
+                .insert([{ name, deadline, priority, completed: false }]);
+
+            if (error) {
+                console.error("Error dari Supabase:", error);
+                alert("Gagal simpan task ke cloud!");
+            } else {
+                tasks.push({ id: Date.now(), name, deadline, priority, completed: false });
+                localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
+                closeModal('taskModal');
+                renderTasks();
+            }
         }
 
         function toggleTask(id) {
             let task = tasks.find(t => t.id === id);
-            if(task) { task.completed = !task.completed; localStorage.setItem('finzen_tasks', JSON.stringify(tasks)); renderTasks(); }
+            if(task) { 
+                task.completed = !task.completed; 
+                localStorage.setItem('finzen_tasks', JSON.stringify(tasks)); 
+                renderTasks(); 
+            }
         }
 
         function deleteTask(id) {
@@ -476,7 +494,6 @@
 
         // 6. MODAL CONTROLS
         function openModal(modalId) { 
-            // Reset form kalau nambah baru (bukan edit)
             if(modalId === 'scheduleModal' && !editingScheduleId) {
                 document.getElementById('schedule-modal-title').innerText = "Add Schedule";
                 document.getElementById('sch-title').value = '';
@@ -492,7 +509,7 @@
         }
         function closeModal(modalId) { 
             document.getElementById(modalId).style.display = 'none'; 
-            if(modalId === 'scheduleModal') editingScheduleId = null; // Batalin mode edit kalau diclose
+            if(modalId === 'scheduleModal') editingScheduleId = null; 
         }
         window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingScheduleId = null; } }
 
