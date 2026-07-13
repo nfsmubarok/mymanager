@@ -229,16 +229,19 @@
 
     <div id="transferModal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h2>Transfer Balance</h2><button class="close-btn" onclick="closeModal('transferModal')">✕</button></div>
+            <div class="modal-header"><h2 id="transfer-modal-title">Transfer Balance</h2><button class="close-btn" onclick="closeModal('transferModal')">✕</button></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="form-group"><label>From</label><select id="transfer-from" class="form-input"></select></div>
                 <div class="form-group"><label>To</label><select id="transfer-to" class="form-input"></select></div>
             </div>
             <div class="form-group"><label>Amount (Rp)</label><input type="number" id="transfer-amount" class="form-input" placeholder="0"></div>
-            <div class="form-group"><label>Date</label><input type="date" id="transfer-date" class="form-input"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label>Date</label><input type="date" id="transfer-date" class="form-input"></div>
+                <div class="form-group"><label>Note (Optional)</label><input type="text" id="transfer-note" class="form-input" placeholder="Notes..."></div>
+            </div>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveTransfer()">Transfer</button>
+                <button class="btn-submit" onclick="saveTransfer()">Save Transfer</button>
             </div>
         </div>
     </div>
@@ -266,6 +269,7 @@
         let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
         let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
         let editingTxId = null;
+        let editingTransferId = null; // Tambahan ID khusus buat Transfer Edit
 
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
@@ -439,20 +443,31 @@
             });
         }
 
+        // UPDATE: Fungsi buat ngebedain mode Edit Transfer dan Income/Expense
         function editTransaction(id) {
             let tx = transactions.find(t => t.id == id);
             if(tx) {
-                editingTxId = id;
-                document.getElementById('tx-modal-title').innerText = "Edit Transaction";
-                document.getElementById(tx.type === 'expense' ? 'type-expense' : 'type-income').checked = true;
-                document.getElementById('tx-desc').value = tx.desc;
-                document.getElementById('tx-amount').value = tx.amount;
-                document.getElementById('tx-date').value = tx.date;
-                document.getElementById('tx-category').value = tx.category;
-                document.getElementById('tx-wallet').value = tx.walletId;
-                document.getElementById('tx-note').value = tx.note || '';
-                
-                openModal('transactionModal');
+                if(tx.type === 'transfer') {
+                    editingTransferId = id;
+                    document.getElementById('transfer-modal-title').innerText = "Edit Transfer";
+                    document.getElementById('transfer-from').value = tx.walletId;
+                    document.getElementById('transfer-to').value = tx.to_wallet_id || '';
+                    document.getElementById('transfer-amount').value = tx.amount;
+                    document.getElementById('transfer-date').value = tx.date;
+                    document.getElementById('transfer-note').value = tx.note || '';
+                    openModal('transferModal');
+                } else {
+                    editingTxId = id;
+                    document.getElementById('tx-modal-title').innerText = "Edit Transaction";
+                    document.getElementById(tx.type === 'expense' ? 'type-expense' : 'type-income').checked = true;
+                    document.getElementById('tx-desc').value = tx.desc;
+                    document.getElementById('tx-amount').value = tx.amount;
+                    document.getElementById('tx-date').value = tx.date;
+                    document.getElementById('tx-category').value = tx.category;
+                    document.getElementById('tx-wallet').value = tx.walletId;
+                    document.getElementById('tx-note').value = tx.note || '';
+                    openModal('transactionModal');
+                }
             }
         }
 
@@ -470,15 +485,27 @@
             let payload = { type, description: desc, amount, date, category, wallet_id: walletId, note };
 
             if(editingTxId) {
-                // Update Supabase
                 const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTxId);
                 if (error) { showToast("Gagal update cloud!", true); return; }
                 
                 let idx = transactions.findIndex(t => t.id == editingTxId);
+                
+                // Revert dompet lokal buat jaga sinkronisasi
+                let oldTx = transactions[idx];
+                let oldWalletIdx = wallets.findIndex(w => w.id === oldTx.walletId);
+                if(oldWalletIdx !== -1) {
+                    if (oldTx.type === 'expense') wallets[oldWalletIdx].balance += oldTx.amount;
+                    else wallets[oldWalletIdx].balance -= oldTx.amount;
+                }
+                let newWalletIdx = wallets.findIndex(w => w.id === walletId);
+                if(newWalletIdx !== -1) {
+                    if (type === 'expense') wallets[newWalletIdx].balance -= amount;
+                    else wallets[newWalletIdx].balance += amount;
+                }
+
                 transactions[idx] = { id: editingTxId, type, desc, amount, date, category, walletId, note };
                 showToast("Transaksi berhasil diupdate!");
             } else {
-                // Insert Supabase
                 const { data, error } = await supabaseClient.from('transactions').insert([payload]).select();
                 if (error) { showToast("Gagal simpan ke cloud!", true); return; }
                 
@@ -516,29 +543,70 @@
             showToast("Wallet ditambahkan!");
         }
 
-        function saveTransfer() {
+        // UPDATE: Logika save transfer ke cloud + edit
+        async function saveTransfer() {
             let fromId = document.getElementById('transfer-from').value;
             let toId = document.getElementById('transfer-to').value;
             let amount = parseInt(document.getElementById('transfer-amount').value);
             let date = document.getElementById('transfer-date').value;
+            let note = document.getElementById('transfer-note').value;
 
             if(fromId === toId) { showToast("Masa transfer ke dompet yang sama wkwk", true); return; }
             if(!amount || !date) { showToast("Isi jumlah dan tanggalnya cuy!", true); return; }
 
             let idxFrom = wallets.findIndex(w => w.id === fromId);
             let idxTo = wallets.findIndex(w => w.id === toId);
-            if(wallets[idxFrom].balance < amount) { showToast("Saldo nggak cukup!", true); return; }
+            
+            // Ngecek batas saldo cuma pas bikin baru biar lu tetep bisa ngedit angkanya sesuka hati
+            if(!editingTransferId && wallets[idxFrom].balance < amount) { showToast("Saldo nggak cukup!", true); return; }
 
-            wallets[idxFrom].balance -= amount;
-            wallets[idxTo].balance += amount;
-            transactions.push({ 
-                id: Date.now(), type: 'transfer', desc: `Transfer ke ${wallets[idxTo].name}`, 
-                amount, date, category: 'Transfer', walletId: fromId, note: '' 
-            });
+            let payload = { 
+                type: 'transfer', 
+                description: `Transfer ke ${wallets[idxTo].name}`, 
+                amount: amount, 
+                date: date, 
+                category: 'Transfer', 
+                wallet_id: fromId,
+                to_wallet_id: toId, // Pastikan ada di database Supabase!
+                note: note 
+            };
 
+            if(editingTransferId) {
+                // Update ke Supabase
+                const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTransferId);
+                if (error) { showToast("Gagal update transfer ke cloud!", true); return; }
+
+                let idx = transactions.findIndex(t => t.id == editingTransferId);
+                let oldTx = transactions[idx];
+
+                // Kembalikan saldo sebelum diedit
+                let oldIdxFrom = wallets.findIndex(w => w.id === oldTx.walletId);
+                let oldIdxTo = wallets.findIndex(w => w.id === oldTx.to_wallet_id);
+                if(oldIdxFrom !== -1) wallets[oldIdxFrom].balance += oldTx.amount;
+                if(oldIdxTo !== -1) wallets[oldIdxTo].balance -= oldTx.amount;
+
+                // Terapkan saldo setelah diedit
+                wallets[idxFrom].balance -= amount;
+                wallets[idxTo].balance += amount;
+
+                transactions[idx] = { id: editingTransferId, type: 'transfer', desc: payload.description, amount, date, category: 'Transfer', walletId: fromId, to_wallet_id: toId, note };
+                showToast("Transfer berhasil diupdate!");
+            } else {
+                // Insert ke Supabase
+                const { data, error } = await supabaseClient.from('transactions').insert([payload]).select();
+                if (error) { showToast("Gagal simpan transfer ke cloud!", true); return; }
+
+                let newId = data ? data[0].id : Date.now();
+                transactions.push({ id: newId, type: 'transfer', desc: payload.description, amount, date, category: 'Transfer', walletId: fromId, to_wallet_id: toId, note });
+                
+                wallets[idxFrom].balance -= amount;
+                wallets[idxTo].balance += amount;
+                showToast("Transfer berhasil!");
+            }
+
+            editingTransferId = null;
             closeModal('transferModal');
             updateDashboard();
-            showToast("Transfer berhasil!");
         }
 
         function deleteWallet(id) {
@@ -568,16 +636,28 @@
                 document.getElementById('tx-amount').value = '';
                 document.getElementById('tx-date').valueAsDate = new Date();
                 document.getElementById('tx-note').value = '';
-            } else if (modalId === 'transferModal') {
+            } else if (modalId === 'transferModal' && !editingTransferId) {
+                // Reset form transfer kalau bukan lagi mode Edit
+                document.getElementById('transfer-modal-title').innerText = "Transfer Balance";
                 document.getElementById('transfer-date').valueAsDate = new Date();
                 document.getElementById('transfer-amount').value = '';
+                document.getElementById('transfer-note').value = '';
             }
         }
+        
         function closeModal(modalId) { 
             document.getElementById(modalId).style.display = 'none'; 
             if(modalId === 'transactionModal') editingTxId = null;
+            if(modalId === 'transferModal') editingTransferId = null; // Tambahan wajib
         }
-        window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingTxId = null; } }
+        
+        window.onclick = function(event) { 
+            if (event.target.classList.contains('modal-overlay')) { 
+                event.target.style.display = "none"; 
+                editingTxId = null; 
+                editingTransferId = null; 
+            } 
+        }
 
         window.onload = () => { 
             document.getElementById('filter-month').value = new Date().getMonth();
