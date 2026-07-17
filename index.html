@@ -642,7 +642,7 @@
         async function fetchCloudData() {
             // 1. Ambil data wallets dari Supabase
             const { data: dbWallets } = await supabaseClient.from('wallets').select('*');
-            if (dbWallets && dbWallets.length > 0) {
+            if (dbWallets) {
                 wallets = dbWallets;
                 localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
             }
@@ -650,7 +650,18 @@
             // 2. Ambil data transactions dari Supabase
             const { data: dbTx } = await supabaseClient.from('transactions').select('*');
             if (dbTx) {
-                transactions = dbTx;
+                // TRANSLATE KOLOM DATABASE KE FRONTEND
+                transactions = dbTx.map(t => ({
+                    id: t.id,
+                    type: t.type,
+                    desc: t.description,  // <--- Supabase: description, JS: desc
+                    amount: t.amount,
+                    date: t.date,
+                    category: t.category,
+                    walletId: t.wallet_id, // <--- Supabase: wallet_id, JS: walletId
+                    to_wallet_id: t.to_wallet_id,
+                    note: t.note
+                }));
                 localStorage.setItem('finzen_tx', JSON.stringify(transactions));
             }
 
