@@ -400,7 +400,42 @@
                 window.location.href = 'login.html'; // Usir ke halaman login
             }
         }
+        // --- FUNGSI NARIK DATA DARI CLOUD ---
+        async function fetchCloudData() {
+            // 1. Ambil data wallets dari Supabase
+            const { data: dbWallets } = await supabaseClient.from('wallets').select('*');
+            if (dbWallets && dbWallets.length > 0) {
+                wallets = dbWallets;
+                localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
+            }
 
+            // 2. Ambil data transactions dari Supabase
+            const { data: dbTx } = await supabaseClient.from('transactions').select('*');
+            if (dbTx) {
+                transactions = dbTx;
+                localStorage.setItem('finzen_tx', JSON.stringify(transactions));
+            }
+
+            // 3. Render layarnya
+            updateDashboard();
+        }
+
+        // --- SISTEM GEMBOK LOGIN ---
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                // KALAU SUDAH LOGIN, TARIK DATA DARI CLOUD!
+                fetchCloudData();
+            }
+        }
+
+        // Jalankan pas halaman dibuka
+        window.onload = () => { 
+            document.getElementById('filter-month').value = new Date().getMonth();
+            checkAuth(); 
+        };
         async function logout() {
             await supabaseClient.auth.signOut();
             window.location.href = 'login.html';
