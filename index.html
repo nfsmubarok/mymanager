@@ -643,7 +643,13 @@
             // 1. Ambil data wallets dari Supabase
             const { data: dbWallets } = await supabaseClient.from('wallets').select('*');
             if (dbWallets) {
-                wallets = dbWallets;
+                // TRANSLATE KOLOM DATABASE (nama) KE FRONTEND (name)
+                wallets = dbWallets.map(w => ({
+                    id: w.id,
+                    name: w.nama,  // <--- INI KUNCINYA! Ngerubah 'nama' jadi 'name'
+                    balance: w.balance,
+                    user_id: w.user_id
+                }));
                 localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
             }
 
