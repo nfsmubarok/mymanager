@@ -80,9 +80,9 @@
         
         <div class="menu-group">
             <div class="menu-title">Main Dashboard</div>
-            <a href="index.html" class="menu-item">Money Manager</a>
+            <a href="index.html" class="menu-item active">Money Manager</a>
             <a href="schedule.html" class="menu-item">Schedule & Planner</a>
-            <a href="wishlist.html" class="menu-item active">Wishlist Tracker</a>
+            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
         </div>
         
         <div class="menu-group">
@@ -90,6 +90,12 @@
             <a href="hobbies.html" class="menu-item">My Hobbies</a>
             <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
             <a href="minigames.html" class="menu-item">Mini Games</a>
+        </div>
+
+        <div style="margin-top: auto; padding: 0 24px;">
+            <button onclick="logout()" style="width: 100%; background: var(--sakura-pink); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(217, 140, 140, 0.2);">
+                Logout
+            </button>
         </div>
     </div>
 
@@ -267,7 +273,21 @@
             document.getElementById('wish-plans').value = '';
             openModal('addWishModal');
         }
+        // --- SISTEM GEMBOK LOGIN ---
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html'; // Usir ke halaman login
+            }
+        }
 
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        // Panggil checkAuth pas halaman dibuka
+        checkAuth();
         async function saveNewWish() {
             const title = document.getElementById('wish-title').value;
             const targetAmount = parseInt(document.getElementById('wish-target').value);
