@@ -1,56 +1,106 @@
-const dinoEl = document.getElementById("dino");
-const obsEl = document.getElementById("obstacle");
-const gameOverDiv = document.getElementById("game-over-modal");
+window.generateSudoku = function() {
+    // 1. Template Master Sudoku (Valid 100%)
+    const base = [
+        [1,2,3, 4,5,6, 7,8,9], [4,5,6, 7,8,9, 1,2,3], [7,8,9, 1,2,3, 4,5,6],
+        [2,3,4, 5,6,7, 8,9,1], [5,6,7, 8,9,1, 2,3,4], [8,9,1, 2,3,4, 5,6,7],
+        [3,4,5, 6,7,8, 9,1,2], [6,7,8, 9,1,2, 3,4,5], [9,1,2, 3,4,5, 6,7,8]
+    ];
 
-let obsTypes = [
-    { icon: '🌵', bottom: 0 },
-    { icon: '🦅', bottom: 40 }, // Burung terbang (harus nunduk / diemin aja)
-    { icon: '🪨', bottom: 0 }
-];
+    // 2. Acak angka 1-9 (Algoritma Mapping Super Ringan)
+    const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+    let board = base.map(row => row.map(val => nums[val-1]));
 
-let obsX = 600, dinoY = 0, gameScore = 0, gameSpeed = 5, gameActive = false, jumping = false, currentObs = obsTypes[0];
-
-window.jump = function() {
-    if (!jumping && gameActive) {
-        jumping = true; dinoEl.classList.add("jump");
-        setTimeout(() => { dinoEl.classList.remove("jump"); jumping = false; }, 500);
+    // 3. Bolongin kotak acak buat dijadiin teka-teki
+    let cellsToRemove = 45; // Level Medium. Makin gede angkanya, makin susah
+    while(cellsToRemove > 0) {
+        let r = Math.floor(Math.random() * 9);
+        let c = Math.floor(Math.random() * 9);
+        if (board[r][c] !== 0) {
+            board[r][c] = 0;
+            cellsToRemove--;
+        }
     }
+    renderBoard(board);
 }
 
-document.addEventListener("keydown", function(event) {
-    if(event.code === "Space") { event.preventDefault(); if(gameActive) jump(); else startGame(); }
-});
-
-window.startGame = function() {
-    gameOverDiv.style.display = "none";
-    gameActive = true; gameScore = 0; gameSpeed = 5; obsX = 600; jumping = false;
-    dinoEl.classList.remove("jump"); document.getElementById('dino-score').innerText = "Score: 0";
+function renderBoard(board) {
+    const container = document.getElementById('sudoku-board');
+    container.innerHTML = '';
     
-    currentObs = obsTypes[0]; obsEl.innerText = currentObs.icon; obsEl.style.bottom = currentObs.bottom + 'px';
-    updateFrame();
+    for(let r = 0; r < 9; r++) {
+        for(let c = 0; c < 9; c++) {
+            let val = board[r][c];
+            let input = document.createElement('input');
+            input.type = 'number';
+            input.min = 1; input.max = 9;
+            input.className = 'sudoku-cell';
+            
+            // Garis tebal pemisah kotak 3x3
+            if (c === 2 || c === 5) input.classList.add('thick-right');
+            if (r === 2 || r === 5) input.classList.add('thick-bottom');
+
+            if (val !== 0) {
+                input.value = val;
+                input.classList.add('readonly');
+                input.readOnly = true;
+            } else {
+                input.addEventListener('input', function() {
+                    // Batasin input cuma boleh 1 angka (1-9)
+                    if (this.value.length > 1) this.value = this.value.slice(0, 1);
+                    if (this.value < 1 || this.value > 9) this.value = '';
+                });
+            }
+            
+            input.dataset.r = r;
+            input.dataset.c = c;
+            container.appendChild(input);
+        }
+    }
 }
 
-function updateFrame() {
-    if(!gameActive) return;
-    obsX -= gameSpeed;
+window.checkSolution = function() {
+    let inputs = document.querySelectorAll('.sudoku-cell');
+    let grid = Array.from({length: 9}, () => Array(9).fill(0));
+    let allFilled = true;
 
-    if(obsX <= -40) {
-        obsX = 600 + Math.random() * 300; gameScore++;
-        document.getElementById('dino-score').innerText = "Score: " + gameScore;
-        if(gameSpeed < 12) gameSpeed += 0.25;
-        currentObs = obsTypes[Math.floor(Math.random() * obsTypes.length)];
-        obsEl.innerText = currentObs.icon; obsEl.style.bottom = currentObs.bottom + 'px';
+    // Ambil semua data dari inputan lu
+    inputs.forEach(input => {
+        let val = parseInt(input.value);
+        if (!val) allFilled = false;
+        grid[input.dataset.r][input.dataset.c] = val || 0;
+    });
+
+    if (!allFilled) {
+        alert("Woy, isi semua kotaknya dulu dong!");
+        return;
     }
-    obsEl.style.left = obsX + "px";
 
-    let dY = parseInt(window.getComputedStyle(dinoEl).getPropertyValue("bottom"));
-    let hitX = obsX > 30 && obsX < 90;
-    let hitY = currentObs.bottom === 0 ? dY < 30 : dY > 10;
+    // 4. Algoritma Validasi Sudoku (O(N^2) tapi instan karena N cuma 9)
+    let isValid = true;
+    for(let i = 0; i < 9; i++) {
+        let row = new Set(), col = new Set(), box = new Set();
+        for(let j = 0; j < 9; j++) {
+            let rVal = grid[i][j];
+            let cVal = grid[j][i];
+            
+            // Rumus posisi kotak 3x3
+            let bVal = grid[3 * Math.floor(i / 3) + Math.floor(j / 3)][3 * (i % 3) + (j % 3)];
 
-    if (hitX && hitY) {
-        gameActive = false; document.getElementById('final-score').innerText = gameScore; gameOverDiv.style.display = 'flex'; return;
+            if(rVal && row.has(rVal)) isValid = false; row.add(rVal);
+            if(cVal && col.has(cVal)) isValid = false; col.add(cVal);
+            if(bVal && box.has(bVal)) isValid = false; box.add(bVal);
+        }
     }
-    requestAnimationFrame(updateFrame);
+
+    if(isValid) {
+        alert("GG! 🧠 Sudoku berhasil dipecahkan!");
+    } else {
+        alert("Masih ada angka yang bentrok di Baris / Kolom / Kotak 3x3. Coba cek lagi!");
+    }
 }
 
-window.onload = () => { if(typeof checkAuth === 'function') checkAuth(); };
+// Langsung generate board pas pertama kali halaman dibuka
+window.onload = () => { 
+    if(typeof checkAuth === 'function') checkAuth(); 
+    generateSudoku(); 
+};

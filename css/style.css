@@ -147,13 +147,18 @@ select { appearance: none; -webkit-appearance: none; background-image: url("data
 .btn-delete-card { background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.5; transition: 0.2s; }
 .btn-delete-card:hover { opacity: 1; color: var(--sakura-pink); }
 
-/* --- MINIGAME PAGE --- */
-.game-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-#dino-game { width: 100%; height: 150px; border-bottom: 2px solid var(--border-color); position: relative; overflow: hidden; background: #fafaf9; }
-#dino { font-size: 40px; position: absolute; bottom: 0; left: 50px; }
-#obstacle { font-size: 30px; position: absolute; bottom: 0; left: 600px; }
-.jump { animation: jumpAnim 0.5s linear; }
-@keyframes jumpAnim { 0% { bottom: 0; } 40% { bottom: 70px; } 50% { bottom: 80px; } 60% { bottom: 70px; } 100% { bottom: 0; } }
+/* --- MINIGAME PAGE (SUDOKU) --- */
+.game-container { position: relative; width: 100%; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+.sudoku-grid { display: grid; grid-template-columns: repeat(9, 1fr); width: 100%; border: 3px solid var(--text-dark); background: var(--bg-white); border-radius: 4px; overflow: hidden; }
+.sudoku-cell { width: 100%; aspect-ratio: 1; text-align: center; font-size: 18px; font-weight: bold; border: 1px solid var(--border-color); outline: none; background: transparent; color: var(--text-dark); padding: 0; transition: 0.2s; }
+.sudoku-cell.readonly { background: var(--bg-rice); color: var(--text-muted); pointer-events: none; }
+.sudoku-cell:focus { background: rgba(143, 151, 121, 0.2); }
+.thick-right { border-right: 2px solid var(--text-dark); }
+.thick-bottom { border-bottom: 2px solid var(--text-dark); }
+
+/* Ilangin panah up/down di input angka */
+.sudoku-cell::-webkit-outer-spin-button, .sudoku-cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.sudoku-cell[type=number] { -moz-appearance: textfield; }
 
 
 /* === RESPONSIVE DESIGN (BISA BUKA DI HP) === */
