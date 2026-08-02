@@ -35,24 +35,18 @@
     <div class="main-content">
         <div class="header">
             <div>
-                <h1>Zen Dino</h1>
-                <p>Press Space or Tap the screen to jump.</p>
+                <h1>Zen Sudoku</h1>
+                <p>Latih fokus lu. Isi kotak kosong dengan angka 1-9.</p>
             </div>
-            <h2 id="dino-score" style="color: var(--text-dark); font-size: 24px;">Score: 0</h2>
         </div>
-        
 
-        <div class="game-container">
-            <div id="dino-game" onclick="jump()">
-                <div id="dino">🦖</div>
-                <div id="obstacle">🌵</div>
-                
-                <div id="game-over-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(245,245,240,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 100;">
-                    <h2 style="color: var(--sakura-pink); margin-bottom: 10px; font-size: 24px;">GAME OVER</h2>
-                    <p style="margin-bottom: 15px; color: var(--text-dark);">Final Score: <span id="final-score" style="font-weight: bold;">0</span></p>
-                </div>
+        <div class="game-container" style="max-width: 400px; padding: 20px;">
+            <div id="sudoku-board" class="sudoku-grid"></div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px; width: 100%;">
+                <button class="btn-cancel" style="flex: 1;" onclick="generateSudoku()">🔄 New Game</button>
+                <button class="btn-submit" style="flex: 1; background-color: var(--ocean-blue);" onclick="checkSolution()">✓ Check Solution</button>
             </div>
-            <button class="btn-start" style="margin-top: 30px; background: var(--matcha-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;" onclick="startGame(); this.blur();">Start Game</button>
         </div>
     </div>
 
