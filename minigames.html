@@ -41,6 +41,15 @@
         </div>
 
         <div class="game-container" style="max-width: 400px; padding: 20px;">
+            <!-- Pilihan Level -->
+            <div style="width: 100%; margin-bottom: 15px;">
+                <select id="sudoku-level" class="form-input" style="font-weight: bold; cursor: pointer; text-align: center; background-color: var(--bg-white);" onchange="generateSudoku()">
+                    <option value="30">Level 1 - Easy</option>
+                    <option value="45" selected>Level 2 - Medium</option>
+                    <option value="55">Level 3 - Hard</option>
+                </select>
+            </div>
+
             <!-- UI Nyawa / Lives -->
             <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 16px; font-weight: bold; color: var(--text-dark);">
                 <span>Mistakes:</span>
@@ -50,7 +59,7 @@
             <div id="sudoku-board" class="sudoku-grid"></div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px; width: 100%;">
-                <button class="btn-submit" style="width: 100%;" onclick="generateSudoku()">🔄 New Game</button>
+                <button class="btn-submit" style="width: 100%;" onclick="generateSudoku()">🔄 Restart Game</button>
             </div>
         </div>
     </div>

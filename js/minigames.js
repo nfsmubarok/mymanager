@@ -1,14 +1,18 @@
 let solvedBoard = []; // Nyimpen kunci jawaban
 let lives = 3;
-let cellsLeft = 45; // Jumlah kotak kosong
+let cellsLeft = 45; // Default (nanti ditimpa sama level)
 
 window.generateSudoku = function() {
-    // Reset status game
+    // Ambil level dari dropdown
+    const levelDropdown = document.getElementById('sudoku-level');
+    const targetHoles = levelDropdown ? parseInt(levelDropdown.value) : 45;
+
+    // Reset status game sesuai level
     lives = 3;
-    cellsLeft = 45; 
+    cellsLeft = targetHoles; 
     updateLivesDisplay();
 
-    // 1. Template Master (Valid)
+    // 1. Template Master (Valid 100%)
     const base = [
         [1,2,3, 4,5,6, 7,8,9], [4,5,6, 7,8,9, 1,2,3], [7,8,9, 1,2,3, 4,5,6],
         [2,3,4, 5,6,7, 8,9,1], [5,6,7, 8,9,1, 2,3,4], [8,9,1, 2,3,4, 5,6,7],
@@ -22,10 +26,11 @@ window.generateSudoku = function() {
     // 3. Clone untuk papan puzzle (yang bakal dibolongin)
     let puzzleBoard = JSON.parse(JSON.stringify(solvedBoard));
     
-    let holes = cellsLeft;
+    let holes = targetHoles;
     while(holes > 0) {
         let r = Math.floor(Math.random() * 9);
         let c = Math.floor(Math.random() * 9);
+        // Pastiin kotaknya belum bolong
         if (puzzleBoard[r][c] !== 0) {
             puzzleBoard[r][c] = 0;
             holes--;
@@ -37,7 +42,6 @@ window.generateSudoku = function() {
 function updateLivesDisplay() {
     const display = document.getElementById('lives-display');
     if(display) {
-        // Nampilin sisa hati dan hati retak
         display.innerText = '❤️'.repeat(lives) + '💔'.repeat(3 - lives);
     }
 }
@@ -89,7 +93,7 @@ function renderBoard(board) {
                         // JAWABAN BENAR
                         this.classList.add('readonly');
                         this.readOnly = true;
-                        this.style.color = 'var(--ocean-blue)'; // Warna biru buat jawaban tebakan
+                        this.style.color = 'var(--ocean-blue)'; // Warna biru buat tebakan bener
                         cellsLeft--;
                         
                         if (cellsLeft === 0) {
