@@ -3,43 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マネージャー Dashboard - Mini Games</title>
-    <style>
-        :root {
-            --bg-rice: #F5F5F0; --bg-white: #FFFFFF; --text-dark: #2D3748; --text-muted: #718096;
-            --matcha-green: #8F9779; --sakura-pink: #D98C8C; --ocean-blue: #7B9095; --border-color: #E2E8F0;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: var(--bg-rice); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
-
-        .sidebar { width: 250px; background-color: var(--bg-white); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;}
-        .logo { font-size: 22px; font-weight: bold; padding: 0 24px; margin-bottom: 40px; color: var(--text-dark); letter-spacing: 2px; }
-        .menu-group { margin-bottom: 24px; }
-        .menu-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 24px; margin-bottom: 10px; }
-        .menu-item { padding: 12px 24px; display: block; text-decoration: none; color: var(--text-muted); font-weight: 500; transition: all 0.3s; }
-        .menu-item:hover { background-color: var(--bg-rice); color: var(--text-dark); }
-        .menu-item.active { background-color: rgba(143, 151, 121, 0.1); color: var(--matcha-green); border-right: 4px solid var(--matcha-green); }
-
-        .main-content { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column; align-items: center;}
-        .header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .header h1 { font-size: 28px; margin-bottom: 4px; }
-        .header p { color: var(--text-muted); font-size: 14px; }
-
-        .game-container { background: var(--bg-white); border-radius: 16px; border: 1px solid var(--border-color); padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px; margin-top: 40px;}
-        
-        #dino-game { position: relative; width: 100%; max-width: 600px; height: 250px; border-bottom: 3px solid var(--text-dark); overflow: hidden; background: var(--bg-rice); border-radius: 12px 12px 0 0; margin-bottom: 20px;}
-        
-        #dino { font-size: 40px; position: absolute; bottom: 0; left: 50px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; z-index: 10; user-select: none;}
-        #obstacle { font-size: 40px; position: absolute; bottom: 0; left: 650px; width: 40px; height: 45px; display: flex; align-items: center; justify-content: center; user-select: none;}
-        
-        .jump { animation: jumpAnim 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-        @keyframes jumpAnim { 0% { bottom: 0; } 45% { bottom: 120px; } 55% { bottom: 120px; } 100% { bottom: 0; } }
-
-        .btn-start { background: var(--matcha-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(143,151,121,0.2);}
-        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(143,151,121,0.3); }
-
-        #game-over-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 20; border-radius: 12px 12px 0 0;}
-    </style>
+    <title>マネージャー Dashboard - Money</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
