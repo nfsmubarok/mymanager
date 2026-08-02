@@ -159,4 +159,32 @@
     .summary-grid {
         grid-template-columns: 1fr; /* 1 Kolom Penuh di HP layar kecil */
     }
+/* --- FIX CALENDAR MOBILE --- */
+    .calendar-grid {
+        gap: 2px; /* Jarak antar hari dikecilin */
+    }
+    .day-name {
+        font-size: 11px;
+        padding: 4px 0;
+    }
+    .day-cell {
+        min-height: 55px;
+        padding: 4px;
+    }
+    .day-number {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+    .event-pill {
+        font-size: 9px;
+        padding: 2px;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Teks kepanjangan jadi titik-titik */
+    }
+    #daily-schedule-list {
+        max-height: 60vh;
+        overflow-y: auto; /* Biar jadwal harian bisa di-scroll kalau banyak */
+    }
 }
