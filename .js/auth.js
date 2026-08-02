@@ -5,11 +5,17 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- SISTEM GEMBOK LOGIN ---
 async function checkAuth() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-        window.location.href = 'login.html';
-    } else {
-        fetchCloudData(); // Tarik data setelah dipastikan login
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+        } else {
+            if (typeof fetchCloudData === 'function') {
+                fetchCloudData();
+            }
+        }
+    } catch (err) {
+        console.error("Auth Error:", err);
     }
 }
 

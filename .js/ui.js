@@ -1,12 +1,18 @@
-// --- UTILITIES ---
+// --- UTILITIES (ANTI CRASH) ---
 function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.innerText = msg;
     t.style.backgroundColor = isError ? 'var(--sakura-pink)' : 'var(--matcha-green)';
     t.style.bottom = '30px';
     setTimeout(() => { t.style.bottom = '-100px'; }, 3000);
 }
-function formatRp(angka) { return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+
+function formatRp(angka) {
+    if (angka === undefined || angka === null || isNaN(angka)) return "Rp 0";
+    return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 function getIcon(category) {
     const icons = { "Food & Drinks": "🍜", "Transport": "🚗", "Salary": "💵", "Entertainment": "🎮", "Shopping": "🛍️", "Transfer": "🔄" };
     return icons[category] || "📝";
@@ -19,86 +25,98 @@ function updateDashboard() {
     const tfFrom = document.getElementById('transfer-from');
     const tfTo = document.getElementById('transfer-to');
     
-    let currentMainVal = mainSelect.value;
-    mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
-    wallets.forEach(w => {
-        let opt = `<option value="${w.id}">${w.name}</option>`;
-        mainSelect.innerHTML += opt; txWallet.innerHTML += opt; tfFrom.innerHTML += opt; tfTo.innerHTML += opt;
-    });
-    if (currentMainVal && wallets.find(w => w.id === currentMainVal)) mainSelect.value = currentMainVal;
+    if (mainSelect && txWallet && tfFrom && tfTo) {
+        let currentMainVal = mainSelect.value;
+        mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
+        wallets.forEach(w => {
+            let opt = `<option value="${w.id}">${w.name}</option>`;
+            mainSelect.innerHTML += opt; txWallet.innerHTML += opt; tfFrom.innerHTML += opt; tfTo.innerHTML += opt;
+        });
+        if (currentMainVal && wallets.find(w => w.id === currentMainVal)) mainSelect.value = currentMainVal;
+    }
 
     const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
     let totalIncome = 0; let totalExpense = 0; let totalSavings = 0; let expensesByCategory = {};
 
-    wallets.forEach(w => totalSavings += parseInt(w.balance));
+    wallets.forEach(w => totalSavings += (parseInt(w.balance) || 0));
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     transactions.forEach(tx => {
         let txDate = new Date(tx.date);
+        let amt = parseInt(tx.amount) || 0;
         if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
-            if (tx.type === 'income') totalIncome += parseInt(tx.amount);
+            if (tx.type === 'income') totalIncome += amt;
             if (tx.type === 'expense') {
-                totalExpense += parseInt(tx.amount);
+                totalExpense += amt;
                 if (!expensesByCategory[tx.category]) expensesByCategory[tx.category] = 0;
-                expensesByCategory[tx.category] += parseInt(tx.amount);
+                expensesByCategory[tx.category] += amt;
             }
         }
     });
 
     updateCurrentBalanceDisplay();
-    document.getElementById('display-total-income').innerText = formatRp(totalIncome);
-    document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
-    document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
+    if(document.getElementById('display-total-income')) document.getElementById('display-total-income').innerText = formatRp(totalIncome);
+    if(document.getElementById('display-total-expense')) document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
+    if(document.getElementById('display-total-savings')) document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
 
-    // Render Wallets
+    // Wallets List
     const walletsListDiv = document.getElementById('wallets-list');
-    walletsListDiv.innerHTML = '';
-    wallets.forEach(w => {
-        walletsListDiv.innerHTML += `
-            <div class="wallet-sub-box">
-                <div>
-                    <p style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${w.name}</p>
-                    <p style="font-weight: bold; font-size: 16px;">${formatRp(w.balance)}</p>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--matcha-green); color: var(--matcha-green); opacity: 0.15; display: flex; align-items:center; justify-content:center;">💳</div>
-                </div>
-            </div>`;
-    });
-
-    // Render Recent Tx
-    const recentDiv = document.getElementById('recent-tx-list');
-    recentDiv.innerHTML = '';
-    let recentTxs = transactions.slice(0, 5);
-    if (recentTxs.length === 0) recentDiv.innerHTML = '<div class="empty-state">📮 No transactions yet</div>';
-    else {
-        recentTxs.forEach(tx => {
-            let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
-            let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
-            let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
-            recentDiv.innerHTML += `
-                <div class="transaction-item">
+    if (walletsListDiv) {
+        walletsListDiv.innerHTML = '';
+        wallets.forEach(w => {
+            walletsListDiv.innerHTML += `
+                <div class="wallet-sub-box">
                     <div>
-                        <p style="font-weight: 600; font-size: 14px;">${tx.desc} ${getIcon(tx.category)}</p>
-                        <p style="font-size: 12px; color: var(--text-muted);">${w.name} • ${tx.date}</p>
+                        <p style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${w.name}</p>
+                        <p style="font-weight: bold; font-size: 16px;">${formatRp(w.balance)}</p>
                     </div>
-                    <p style="color: ${color}; font-weight: bold;">${sign} ${formatRp(tx.amount)}</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;" title="Delete Wallet">🗑️</button>
+                    </div>
                 </div>`;
         });
+    }
+
+    // Recent Tx
+    const recentDiv = document.getElementById('recent-tx-list');
+    if (recentDiv) {
+        recentDiv.innerHTML = '';
+        let recentTxs = transactions.slice(0, 5);
+        if (recentTxs.length === 0) recentDiv.innerHTML = '<div class="empty-state">📮 No transactions yet</div>';
+        else {
+            recentTxs.forEach(tx => {
+                let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
+                let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
+                let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
+                recentDiv.innerHTML += `
+                    <div class="transaction-item">
+                        <div>
+                            <p style="font-weight: 600; font-size: 14px;">${tx.desc} ${getIcon(tx.category)}</p>
+                            <p style="font-size: 12px; color: var(--text-muted);">${w.name} • ${tx.date}</p>
+                        </div>
+                        <p style="color: ${color}; font-weight: bold;">${sign} ${formatRp(tx.amount)}</p>
+                    </div>`;
+            });
+        }
     }
 
     renderAllTransactions();
 }
 
 function updateCurrentBalanceDisplay() {
-    let selectedId = document.getElementById('main-wallet-select').value;
-    let w = wallets.find(w => w.id === selectedId);
-    document.getElementById('display-current-balance').innerText = w ? formatRp(w.balance) : 'Rp 0';
+    let select = document.getElementById('main-wallet-select');
+    let display = document.getElementById('display-current-balance');
+    if (!select || !display) return;
+    let w = wallets.find(w => w.id === select.value);
+    display.innerText = w ? formatRp(w.balance) : 'Rp 0';
 }
 
 function renderAllTransactions() {
     const listDiv = document.getElementById('all-tx-list');
-    const monthFilter = document.getElementById('filter-month').value;
+    const monthFilterEl = document.getElementById('filter-month');
+    if (!listDiv || !monthFilterEl) return;
+    
+    const monthFilter = monthFilterEl.value;
     listDiv.innerHTML = '';
     
     let filteredTxs = transactions;
@@ -144,7 +162,10 @@ function editTransaction(id) {
         } else {
             editingTxId = id;
             document.getElementById('tx-modal-title').innerText = "Edit Transaction";
-            document.getElementById(tx.type === 'expense' ? 'type-expense' : 'type-income').checked = true;
+            let radioExp = document.getElementById('type-expense');
+            let radioInc = document.getElementById('type-income');
+            if(tx.type === 'expense' && radioExp) radioExp.checked = true;
+            if(tx.type === 'income' && radioInc) radioInc.checked = true;
             document.getElementById('tx-desc').value = tx.desc;
             document.getElementById('tx-amount').value = tx.amount;
             document.getElementById('tx-date').value = tx.date;
@@ -156,38 +177,60 @@ function editTransaction(id) {
     }
 }
 
-// --- MODAL & EVENTS ---
+// --- MODALS & CONFIRM ---
 let confirmAction = null; 
 function customConfirm(message, actionCallback) {
-    document.getElementById('confirm-msg').innerText = message;
+    const msgEl = document.getElementById('confirm-msg');
+    const modalEl = document.getElementById('confirmModal');
+    if (msgEl) msgEl.innerText = message;
     confirmAction = actionCallback; 
-    document.getElementById('confirmModal').style.display = 'flex';
+    if (modalEl) modalEl.style.display = 'flex';
 }
-function executeConfirm() { if(confirmAction) { confirmAction(); confirmAction = null; } closeModal('confirmModal'); }
+
+function executeConfirm() { 
+    if(confirmAction) { confirmAction(); confirmAction = null; } 
+    closeModal('confirmModal'); 
+}
 
 function openModal(modalId) { 
-    document.getElementById(modalId).style.display = 'flex'; 
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.style.display = 'flex'; 
     if(modalId === 'transactionModal' && !editingTxId) {
         document.getElementById('tx-modal-title').innerText = "Add Transaction";
-        document.getElementById('tx-desc').value = ''; document.getElementById('tx-amount').value = '';
-        document.getElementById('tx-date').valueAsDate = new Date(); document.getElementById('tx-note').value = '';
+        document.getElementById('tx-desc').value = ''; 
+        document.getElementById('tx-amount').value = '';
+        document.getElementById('tx-date').valueAsDate = new Date(); 
+        document.getElementById('tx-note').value = '';
     } else if (modalId === 'transferModal' && !editingTransferId) {
         document.getElementById('transfer-modal-title').innerText = "Transfer Balance";
-        document.getElementById('transfer-date').valueAsDate = new Date(); document.getElementById('transfer-amount').value = '';
+        document.getElementById('transfer-date').valueAsDate = new Date(); 
+        document.getElementById('transfer-amount').value = '';
         document.getElementById('transfer-note').value = '';
+    } else if (modalId === 'walletModal') {
+        document.getElementById('wallet-name').value = '';
+        document.getElementById('wallet-balance').value = '';
     }
 }
+
 function closeModal(modalId) { 
-    document.getElementById(modalId).style.display = 'none'; 
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'none'; 
     if(modalId === 'transactionModal') editingTxId = null;
     if(modalId === 'transferModal') editingTransferId = null;
 }
+
 window.onclick = function(event) { 
-    if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingTxId = null; editingTransferId = null; } 
+    if (event.target && event.target.classList.contains('modal-overlay')) { 
+        event.target.style.display = "none"; 
+        editingTxId = null; 
+        editingTransferId = null; 
+    } 
 }
 
 // --- INITIALIZE START ---
 window.onload = () => { 
-    document.getElementById('filter-month').value = new Date().getMonth();
+    const filterEl = document.getElementById('filter-month');
+    if (filterEl) filterEl.value = new Date().getMonth();
     checkAuth(); 
 };

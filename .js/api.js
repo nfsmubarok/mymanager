@@ -1,31 +1,51 @@
-// --- STATE / VARIABEL GLOBAL ---
+// --- STATE GLOBAL ---
 let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
 let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
 let editingTxId = null;
 let editingTransferId = null;
 
-// --- FUNGSI NARIK DATA (FETCH) ---
+// --- FUNGSI FETCH CLOUD ---
 async function fetchCloudData() {
-    const { data: dbWallets } = await supabaseClient.from('wallets').select('*');
-    if (dbWallets) {
-        wallets = dbWallets.map(w => ({ id: w.id, name: w.nama, balance: w.balance, user_id: w.user_id }));
-        localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
-    }
+    try {
+        const { data: dbWallets, error: errW } = await supabaseClient.from('wallets').select('*');
+        if (dbWallets) {
+            wallets = dbWallets.map(w => ({
+                id: w.id,
+                name: w.nama || w.name || 'Wallet',
+                balance: parseInt(w.balance) || 0,
+                user_id: w.user_id
+            }));
+            localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
+        }
 
-    const { data: dbTx } = await supabaseClient.from('transactions').select('*');
-    if (dbTx) {
-        transactions = dbTx.map(t => ({
-            id: t.id, type: t.type, desc: t.description, amount: t.amount, date: t.date,
-            category: t.category, walletId: t.wallet_id, to_wallet_id: t.to_wallet_id, note: t.note
-        }));
-        localStorage.setItem('finzen_tx', JSON.stringify(transactions));
+        const { data: dbTx, error: errT } = await supabaseClient.from('transactions').select('*');
+        if (dbTx) {
+            transactions = dbTx.map(t => ({
+                id: t.id,
+                type: t.type,
+                desc: t.description || t.desc || '',
+                amount: parseInt(t.amount) || 0,
+                date: t.date,
+                category: t.category,
+                walletId: t.wallet_id,
+                to_wallet_id: t.to_wallet_id,
+                note: t.note || ''
+            }));
+            localStorage.setItem('finzen_tx', JSON.stringify(transactions));
+        }
+
+        if (typeof updateDashboard === 'function') {
+            updateDashboard();
+        }
+    } catch (err) {
+        console.error("Fetch Error:", err);
     }
-    updateDashboard();
 }
 
-// --- FUNGSI SIMPAN & HAPUS KE CLOUD ---
+// --- FUNGSI SAVE & DELETE TRANSAKSI ---
 async function saveTransaction() {
-    let type = document.querySelector('input[name="tx-type"]:checked').value;
+    let typeEl = document.querySelector('input[name="tx-type"]:checked');
+    let type = typeEl ? typeEl.value : 'expense';
     let desc = document.getElementById('tx-desc').value;
     let amount = parseInt(document.getElementById('tx-amount').value);
     let date = document.getElementById('tx-date').value;
@@ -33,22 +53,24 @@ async function saveTransaction() {
     let walletId = document.getElementById('tx-wallet').value;
     let note = document.getElementById('tx-note').value;
 
-    if(!desc || !amount || !date) { showToast("Tolong isi Description, Amount, dan Date!", true); return; }
-    let payload = { type, description: desc, amount, date, category, wallet_id: walletId, note };
+    if(!desc || isNaN(amount) || !date) { showToast("Tolong isi Description, Amount, dan Date!", true); return; }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    let payload = { type, description: desc, amount, date, category, wallet_id: walletId, note, user_id: user ? user.id : null };
 
     if(editingTxId) {
         const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTxId);
         if (error) { showToast("Gagal update cloud!", true); return; }
-        // (Logika re-kalkulasi saldo lokal disederhanakan, akan ketarik ulang via fetchCloudData biar aman)
         showToast("Transaksi berhasil diupdate!");
     } else {
         const { error } = await supabaseClient.from('transactions').insert([payload]);
         if (error) { showToast("Gagal simpan ke cloud!", true); return; }
         showToast("Transaksi tersimpan!");
     }
+
     editingTxId = null;
     closeModal('transactionModal');
-    fetchCloudData(); // Sync ulang dari cloud biar saldo akurat
+    fetchCloudData();
 }
 
 function triggerDeleteTx(id) {
@@ -68,11 +90,13 @@ async function saveTransfer() {
     let note = document.getElementById('transfer-note').value;
 
     if(fromId === toId) { showToast("Masa transfer ke dompet yang sama wkwk", true); return; }
-    if(!amount || !date) { showToast("Isi jumlah dan tanggalnya cuy!", true); return; }
+    if(isNaN(amount) || !date) { showToast("Isi jumlah dan tanggalnya cuy!", true); return; }
 
+    const { data: { user } } = await supabaseClient.auth.getUser();
     let payload = { 
         type: 'transfer', description: `Transfer`, amount: amount, date: date, 
-        category: 'Transfer', wallet_id: fromId, to_wallet_id: toId, note: note 
+        category: 'Transfer', wallet_id: fromId, to_wallet_id: toId, note: note,
+        user_id: user ? user.id : null
     };
 
     if(editingTransferId) {
@@ -84,16 +108,33 @@ async function saveTransfer() {
         if (error) { showToast("Gagal simpan transfer!", true); return; }
         showToast("Transfer berhasil!");
     }
+
     editingTransferId = null;
     closeModal('transferModal');
     fetchCloudData();
 }
 
-function saveWallet() {
-    // Saat ini belum ada ke cloud, nanti bisa ditambah kalau butuh Create Wallet via UI
-    showToast("Fitur Add Wallet sedang dalam maintenance struktural!");
+async function saveWallet() {
+    let name = document.getElementById('wallet-name').value;
+    let balance = parseInt(document.getElementById('wallet-balance').value);
+    if(!name || isNaN(balance)) { showToast("Isi nama dan saldo awalnya!", true); return; }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const payload = { nama: name, balance: balance, user_id: user ? user.id : null };
+
+    const { error } = await supabaseClient.from('wallets').insert([payload]);
+    if (error) { showToast("Gagal simpan wallet!", true); return; }
+
+    showToast("Wallet berhasil ditambahkan!");
+    closeModal('walletModal');
+    fetchCloudData();
 }
 
 function deleteWallet(id) {
-    showToast("Fitur Delete Wallet sedang dalam maintenance struktural!");
+    customConfirm("Yakin mau hapus dompet ini?", async () => {
+        const { error } = await supabaseClient.from('wallets').delete().eq('id', id);
+        if (error) { showToast("Gagal hapus wallet!", true); return; }
+        showToast("Wallet dihapus!");
+        fetchCloudData();
+    });
 }
