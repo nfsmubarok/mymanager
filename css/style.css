@@ -79,3 +79,84 @@
         
         /* Toast Notification */
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 24px; border-radius: 8px; transition: 0.4s ease-out; z-index: 9999; font-weight: bold; font-size: 14px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+
+        /* === RESPONSIVE DESIGN (BISA BUKA DI HP) === */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    /* Sidebar nyesuaiin layar atas HP */
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 16px 0;
+    }
+    
+    .sidebar .menu-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 16px;
+        margin-bottom: 12px;
+    }
+
+    .menu-title {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .menu-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .menu-item.active {
+        border-right: none;
+        border-bottom: 3px solid var(--matcha-green);
+    }
+
+    /* Konten Utama */
+    .main-content {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .btn-add {
+        width: 100%;
+    }
+
+    /* Grid 4 Kartu di Desktop jadi 2 Kartu di HP */
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    /* Konten 2 Kolom bertumpuk jadi 1 Kolom */
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* Modal Overlay / Pop-up nyesuaiin HP */
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-grid {
+        grid-template-columns: 1fr; /* 1 Kolom Penuh di HP layar kecil */
+    }
+}

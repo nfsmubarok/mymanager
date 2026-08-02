@@ -1,8 +1,8 @@
 // --- STATE GLOBAL ---
-let wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
-let transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
-let editingTxId = null;
-let editingTransferId = null;
+var wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
+var transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
+var editingTxId = null;
+var editingTransferId = null;
 
 // --- FUNGSI FETCH CLOUD ---
 async function fetchCloudData() {
