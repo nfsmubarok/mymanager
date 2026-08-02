@@ -19,7 +19,6 @@ function getIcon(category) {
 }
 
 // --- RENDER DASHBOARD ---
-function // --- RENDER DASHBOARD ---
 function updateDashboard() {
     const mainSelect = document.getElementById('main-wallet-select');
     const txWallet = document.getElementById('tx-wallet');
