@@ -19,6 +19,7 @@ function getIcon(category) {
 }
 
 // --- RENDER DASHBOARD ---
+function // --- RENDER DASHBOARD ---
 function updateDashboard() {
     const mainSelect = document.getElementById('main-wallet-select');
     const txWallet = document.getElementById('tx-wallet');
@@ -38,12 +39,28 @@ function updateDashboard() {
     const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
     let totalIncome = 0; let totalExpense = 0; let totalSavings = 0; let expensesByCategory = {};
 
-    wallets.forEach(w => totalSavings += (parseInt(w.balance) || 0));
+    // 1. Tentukan Saldo Awal (Dari Database)
+    wallets.forEach(w => { w.realBalance = parseInt(w.balance) || 0; });
+
+    // 2. Sortir Transaksi dan Hitung Saldo Dinamis
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     transactions.forEach(tx => {
-        let txDate = new Date(tx.date);
         let amt = parseInt(tx.amount) || 0;
+        let txDate = new Date(tx.date);
+
+        // Rumus Matematika Saldo Dompet
+        let wFrom = wallets.find(w => w.id === tx.walletId);
+        let wTo = wallets.find(w => w.id === tx.to_wallet_id);
+
+        if (tx.type === 'expense' && wFrom) wFrom.realBalance -= amt;
+        if (tx.type === 'income' && wFrom) wFrom.realBalance += amt;
+        if (tx.type === 'transfer') {
+            if (wFrom) wFrom.realBalance -= amt;
+            if (wTo) wTo.realBalance += amt;
+        }
+
+        // Hitung Statistik Pemasukan/Pengeluaran Khusus Bulan Ini
         if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
             if (tx.type === 'income') totalIncome += amt;
             if (tx.type === 'expense') {
@@ -53,6 +70,9 @@ function updateDashboard() {
             }
         }
     });
+
+    // 3. Hitung Ulang Total Tabungan Seluruh Dompet
+    wallets.forEach(w => totalSavings += w.realBalance);
 
     updateCurrentBalanceDisplay();
     if(document.getElementById('display-total-income')) document.getElementById('display-total-income').innerText = formatRp(totalIncome);
@@ -68,7 +88,8 @@ function updateDashboard() {
                 <div class="wallet-sub-box">
                     <div>
                         <p style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${w.name}</p>
-                        <p style="font-weight: bold; font-size: 16px;">${formatRp(w.balance)}</p>
+                        <!-- Panggil realBalance di sini -->
+                        <p style="font-weight: bold; font-size: 16px;">${formatRp(w.realBalance)}</p>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;" title="Delete Wallet">🗑️</button>
@@ -108,7 +129,9 @@ function updateCurrentBalanceDisplay() {
     let display = document.getElementById('display-current-balance');
     if (!select || !display) return;
     let w = wallets.find(w => w.id === select.value);
-    display.innerText = w ? formatRp(w.balance) : 'Rp 0';
+    
+    // Pastikan angka besar di kartu Current Balance pakai realBalance
+    display.innerText = w ? formatRp(w.realBalance) : 'Rp 0';
 }
 
 function renderAllTransactions() {
