@@ -1,26 +1,45 @@
+let solvedBoard = []; // Nyimpen kunci jawaban
+let lives = 3;
+let cellsLeft = 45; // Jumlah kotak kosong
+
 window.generateSudoku = function() {
-    // 1. Template Master Sudoku (Valid 100%)
+    // Reset status game
+    lives = 3;
+    cellsLeft = 45; 
+    updateLivesDisplay();
+
+    // 1. Template Master (Valid)
     const base = [
         [1,2,3, 4,5,6, 7,8,9], [4,5,6, 7,8,9, 1,2,3], [7,8,9, 1,2,3, 4,5,6],
         [2,3,4, 5,6,7, 8,9,1], [5,6,7, 8,9,1, 2,3,4], [8,9,1, 2,3,4, 5,6,7],
         [3,4,5, 6,7,8, 9,1,2], [6,7,8, 9,1,2, 3,4,5], [9,1,2, 3,4,5, 6,7,8]
     ];
 
-    // 2. Acak angka 1-9 (Algoritma Mapping Super Ringan)
+    // 2. Acak angka biar jadi papan unik
     const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-    let board = base.map(row => row.map(val => nums[val-1]));
-
-    // 3. Bolongin kotak acak buat dijadiin teka-teki
-    let cellsToRemove = 45; // Level Medium. Makin gede angkanya, makin susah
-    while(cellsToRemove > 0) {
+    solvedBoard = base.map(row => row.map(val => nums[val-1])); // Ini KUNCI JAWABANNYA
+    
+    // 3. Clone untuk papan puzzle (yang bakal dibolongin)
+    let puzzleBoard = JSON.parse(JSON.stringify(solvedBoard));
+    
+    let holes = cellsLeft;
+    while(holes > 0) {
         let r = Math.floor(Math.random() * 9);
         let c = Math.floor(Math.random() * 9);
-        if (board[r][c] !== 0) {
-            board[r][c] = 0;
-            cellsToRemove--;
+        if (puzzleBoard[r][c] !== 0) {
+            puzzleBoard[r][c] = 0;
+            holes--;
         }
     }
-    renderBoard(board);
+    renderBoard(puzzleBoard);
+}
+
+function updateLivesDisplay() {
+    const display = document.getElementById('lives-display');
+    if(display) {
+        // Nampilin sisa hati dan hati retak
+        display.innerText = '❤️'.repeat(lives) + '💔'.repeat(3 - lives);
+    }
 }
 
 function renderBoard(board) {
@@ -35,68 +54,78 @@ function renderBoard(board) {
             input.min = 1; input.max = 9;
             input.className = 'sudoku-cell';
             
-            // Garis tebal pemisah kotak 3x3
+            // CSS Garis tebal pembatas blok 3x3
             if (c === 2 || c === 5) input.classList.add('thick-right');
             if (r === 2 || r === 5) input.classList.add('thick-bottom');
 
             if (val !== 0) {
+                // Kotak bawaan soal (gak bisa diedit)
                 input.value = val;
                 input.classList.add('readonly');
                 input.readOnly = true;
             } else {
+                // Kotak kosong (event listener buat AUTO CHECK)
                 input.addEventListener('input', function() {
-                    // Batasin input cuma boleh 1 angka (1-9)
-                    if (this.value.length > 1) this.value = this.value.slice(0, 1);
-                    if (this.value < 1 || this.value > 9) this.value = '';
+                    let inputVal = this.value;
+                    
+                    // Kalau di backspace/kosong, biarin aja
+                    if (inputVal === '') return; 
+                    
+                    // Biar gak bisa ngetik 2 angka (misal: 12)
+                    if (inputVal.length > 1) {
+                        this.value = inputVal.slice(-1); 
+                        inputVal = this.value;
+                    }
+                    
+                    let num = parseInt(inputVal);
+                    if (num < 1 || num > 9 || isNaN(num)) {
+                        this.value = ''; return;
+                    }
+
+                    // --- LOGIKA PENGECEKAN JAWABAN ---
+                    let correctVal = solvedBoard[r][c];
+                    
+                    if (num === correctVal) {
+                        // JAWABAN BENAR
+                        this.classList.add('readonly');
+                        this.readOnly = true;
+                        this.style.color = 'var(--ocean-blue)'; // Warna biru buat jawaban tebakan
+                        cellsLeft--;
+                        
+                        if (cellsLeft === 0) {
+                            setTimeout(() => alert("GGWP! 🧠 Lu berhasil mecahin Sudoku-nya!"), 100);
+                        }
+                    } else {
+                        // JAWABAN SALAH
+                        lives--;
+                        updateLivesDisplay();
+                        this.value = ''; // Kosongin lagi
+                        
+                        // Efek kedip merah pas salah
+                        this.style.backgroundColor = 'var(--sakura-pink)';
+                        setTimeout(() => { this.style.backgroundColor = 'transparent'; }, 400);
+
+                        // Kalau nyawa abis
+                        if (lives <= 0) {
+                            setTimeout(() => {
+                                alert("Game Over! 💀 Nyawa lu abis.");
+                                lockBoard(); // Kunci semua kotak
+                            }, 100);
+                        }
+                    }
                 });
             }
-            
-            input.dataset.r = r;
-            input.dataset.c = c;
             container.appendChild(input);
         }
     }
 }
 
-window.checkSolution = function() {
+function lockBoard() {
     let inputs = document.querySelectorAll('.sudoku-cell');
-    let grid = Array.from({length: 9}, () => Array(9).fill(0));
-    let allFilled = true;
-
-    // Ambil semua data dari inputan lu
     inputs.forEach(input => {
-        let val = parseInt(input.value);
-        if (!val) allFilled = false;
-        grid[input.dataset.r][input.dataset.c] = val || 0;
+        input.readOnly = true;
+        input.classList.add('readonly');
     });
-
-    if (!allFilled) {
-        alert("Woy, isi semua kotaknya dulu dong!");
-        return;
-    }
-
-    // 4. Algoritma Validasi Sudoku (O(N^2) tapi instan karena N cuma 9)
-    let isValid = true;
-    for(let i = 0; i < 9; i++) {
-        let row = new Set(), col = new Set(), box = new Set();
-        for(let j = 0; j < 9; j++) {
-            let rVal = grid[i][j];
-            let cVal = grid[j][i];
-            
-            // Rumus posisi kotak 3x3
-            let bVal = grid[3 * Math.floor(i / 3) + Math.floor(j / 3)][3 * (i % 3) + (j % 3)];
-
-            if(rVal && row.has(rVal)) isValid = false; row.add(rVal);
-            if(cVal && col.has(cVal)) isValid = false; col.add(cVal);
-            if(bVal && box.has(bVal)) isValid = false; box.add(bVal);
-        }
-    }
-
-    if(isValid) {
-        alert("GG! 🧠 Sudoku berhasil dipecahkan!");
-    } else {
-        alert("Masih ada angka yang bentrok di Baris / Kolom / Kotak 3x3. Coba cek lagi!");
-    }
 }
 
 // Langsung generate board pas pertama kali halaman dibuka
