@@ -10,6 +10,12 @@ const priorityColors = {
     'Low': { hex: '#8F9779', class: 'tag-low' }
 };
 
+// Helper potong detik paling ampuh
+function formatTime(t) {
+    if(!t) return '';
+    return t.split(':').slice(0, 2).join(':'); // Misal "12:20:00" -> dipisah jadi ["12", "20"] -> digabung jadi "12:20"
+}
+
 // --- FUNGSI TARIK DATA (USER LOGIN ONLY) ---
 async function fetchCloudSchedule() {
     try {
@@ -73,8 +79,8 @@ window.loadCalendar = function() {
                 const eventDiv = document.createElement('div');
                 eventDiv.classList.add('event-pill');
                 eventDiv.style.backgroundColor = priorityColors[event.priority].hex;
-                // FORMAT WAKTU DI KALENDER
-                eventDiv.innerText = `${event.time.substring(0, 5)} ${event.title}`;
+                // Pakai fungsi formatTime biar bersih
+                eventDiv.innerText = `${formatTime(event.time)} ${event.title}`;
                 daySquare.appendChild(eventDiv);
             });
         } else {
@@ -99,7 +105,7 @@ window.openDailyModal = function(dateStr) {
             const pColor = priorityColors[event.priority].hex;
             listDiv.innerHTML += `
                 <div style="border-left: 3px solid ${pColor}; padding: 12px; background: #fafaf9; border-radius: 0 8px 8px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${event.time.substring(0, 5)} - ${event.title}</p></div>
+                    <div><p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${formatTime(event.time)} - ${event.title}</p></div>
                     <div style="display:flex; gap:10px;">
                         <button onclick="editSchedule('${event.id}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">✏️</button>
                         <button onclick="deleteSchedule('${event.id}', '${dateStr}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">🗑️</button>
@@ -121,8 +127,7 @@ window.renderUpcoming = function() {
     else {
         todayEvents.forEach(event => {
             const pColor = priorityColors[event.priority].hex;
-            // FORMAT WAKTU DI DAFTAR UPCOMING
-            listDiv.innerHTML += `<div class="schedule-item" style="border-color: ${pColor};"><div style="display: flex; justify-content: space-between;"><div><p style="font-weight: 700; font-size: 14px;">${event.title}</p><p style="font-size: 12px; color: ${pColor};">${event.priority} Priority • ${event.time.substring(0, 5)}</p></div></div></div>`;
+            listDiv.innerHTML += `<div class="schedule-item" style="border-color: ${pColor};"><div style="display: flex; justify-content: space-between;"><div><p style="font-weight: 700; font-size: 14px;">${event.title}</p><p style="font-size: 12px; color: ${pColor};">${event.priority} Priority • ${formatTime(event.time)}</p></div></div></div>`;
         });
     }
 }
@@ -152,8 +157,7 @@ window.editSchedule = function(id) {
         document.getElementById('schedule-modal-title').innerText = "Edit Schedule";
         document.getElementById('sch-title').value = sch.title; 
         document.getElementById('sch-date').value = sch.date;
-        // FORMAT WAKTU PAS MAU DIEDIT BIAR GA ERROR DI INPUT
-        document.getElementById('sch-time').value = sch.time.substring(0, 5); 
+        document.getElementById('sch-time').value = formatTime(sch.time); 
         document.getElementById('sch-priority').value = sch.priority;
         closeModal('dailyModal'); document.getElementById('scheduleModal').style.display = 'flex';
     }

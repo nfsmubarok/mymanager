@@ -4,21 +4,24 @@ var transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
 var editingTxId = null;
 var editingTransferId = null;
 
-// --- FUNGSI FETCH CLOUD ---
+// --- FUNGSI FETCH CLOUD (KHUSUS USER LOGIN) ---
 async function fetchCloudData() {
     try {
-        const { data: dbWallets, error: errW } = await supabaseClient.from('wallets').select('*');
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: dbWallets, error: errW } = await supabaseClient.from('wallets').select('*').eq('user_id', user.id);
         if (dbWallets) {
             wallets = dbWallets.map(w => ({
                 id: w.id,
-                name: w.nama || w.name || 'Wallet',
+                name: w.name || w.nama || 'Wallet', 
                 balance: parseInt(w.balance) || 0,
                 user_id: w.user_id
             }));
             localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
         }
 
-        const { data: dbTx, error: errT } = await supabaseClient.from('transactions').select('*');
+        const { data: dbTx, error: errT } = await supabaseClient.from('transactions').select('*').eq('user_id', user.id);
         if (dbTx) {
             transactions = dbTx.map(t => ({
                 id: t.id,
@@ -34,16 +37,14 @@ async function fetchCloudData() {
             localStorage.setItem('finzen_tx', JSON.stringify(transactions));
         }
 
-        if (typeof updateDashboard === 'function') {
-            updateDashboard();
-        }
+        if (typeof updateDashboard === 'function') updateDashboard();
     } catch (err) {
         console.error("Fetch Error:", err);
     }
 }
 
 // --- FUNGSI SAVE & DELETE TRANSAKSI ---
-async function saveTransaction() {
+window.saveTransaction = async function() {
     let typeEl = document.querySelector('input[name="tx-type"]:checked');
     let type = typeEl ? typeEl.value : 'expense';
     let desc = document.getElementById('tx-desc').value;
@@ -73,7 +74,7 @@ async function saveTransaction() {
     fetchCloudData();
 }
 
-function triggerDeleteTx(id) {
+window.triggerDeleteTx = function(id) {
     customConfirm(`Yakin mau menghapus transaksi ini?`, async () => {
         const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
         if (error) { showToast("Gagal hapus dari cloud!", true); return; }
@@ -82,7 +83,7 @@ function triggerDeleteTx(id) {
     });
 }
 
-async function saveTransfer() {
+window.saveTransfer = async function() {
     let fromId = document.getElementById('transfer-from').value;
     let toId = document.getElementById('transfer-to').value;
     let amount = parseInt(document.getElementById('transfer-amount').value);
@@ -114,23 +115,32 @@ async function saveTransfer() {
     fetchCloudData();
 }
 
-async function saveWallet() {
+// --- FUNGSI SAVE WALLET (FIX ERROR 400) ---
+window.saveWallet = async function() {
     let name = document.getElementById('wallet-name').value;
     let balance = parseInt(document.getElementById('wallet-balance').value);
     if(!name || isNaN(balance)) { showToast("Isi nama dan saldo awalnya!", true); return; }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    const payload = { nama: name, balance: balance, user_id: user ? user.id : null };
+    
+    // Fix: Pastikan key 'name' sesuai dengan nama kolom di Supabase lu
+    const payload = { name: name, balance: balance, user_id: user ? user.id : null };
 
-    const { error } = await supabaseClient.from('wallets').insert([payload]);
-    if (error) { showToast("Gagal simpan wallet!", true); return; }
+    const { error } = await supabaseClient.from('wallets').insert([payload]).select();
+    if (error) { 
+        console.error(error);
+        // Kalau masih error, berarti nama kolom di DB lu beneran "nama". 
+        // Lu tinggal ganti "name: name" di atas jadi "nama: name"
+        showToast("Gagal simpan wallet! Cek nama kolom di DB.", true); 
+        return; 
+    }
 
     showToast("Wallet berhasil ditambahkan!");
     closeModal('walletModal');
     fetchCloudData();
 }
 
-function deleteWallet(id) {
+window.deleteWallet = function(id) {
     customConfirm("Yakin mau hapus dompet ini?", async () => {
         const { error } = await supabaseClient.from('wallets').delete().eq('id', id);
         if (error) { showToast("Gagal hapus wallet!", true); return; }
