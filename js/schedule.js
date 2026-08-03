@@ -73,7 +73,8 @@ window.loadCalendar = function() {
                 const eventDiv = document.createElement('div');
                 eventDiv.classList.add('event-pill');
                 eventDiv.style.backgroundColor = priorityColors[event.priority].hex;
-                eventDiv.innerText = `${event.time} ${event.title}`;
+                // FORMAT WAKTU DI KALENDER
+                eventDiv.innerText = `${event.time.substring(0, 5)} ${event.title}`;
                 daySquare.appendChild(eventDiv);
             });
         } else {
@@ -98,7 +99,7 @@ window.openDailyModal = function(dateStr) {
             const pColor = priorityColors[event.priority].hex;
             listDiv.innerHTML += `
                 <div style="border-left: 3px solid ${pColor}; padding: 12px; background: #fafaf9; border-radius: 0 8px 8px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${event.time} - ${event.title}</p></div>
+                    <div><p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${event.time.substring(0, 5)} - ${event.title}</p></div>
                     <div style="display:flex; gap:10px;">
                         <button onclick="editSchedule('${event.id}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">✏️</button>
                         <button onclick="deleteSchedule('${event.id}', '${dateStr}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">🗑️</button>
@@ -120,7 +121,8 @@ window.renderUpcoming = function() {
     else {
         todayEvents.forEach(event => {
             const pColor = priorityColors[event.priority].hex;
-            listDiv.innerHTML += `<div class="schedule-item" style="border-color: ${pColor};"><div style="display: flex; justify-content: space-between;"><div><p style="font-weight: 700; font-size: 14px;">${event.title}</p><p style="font-size: 12px; color: ${pColor};">${event.priority} Priority • ${event.time}</p></div></div></div>`;
+            // FORMAT WAKTU DI DAFTAR UPCOMING
+            listDiv.innerHTML += `<div class="schedule-item" style="border-color: ${pColor};"><div style="display: flex; justify-content: space-between;"><div><p style="font-weight: 700; font-size: 14px;">${event.title}</p><p style="font-size: 12px; color: ${pColor};">${event.priority} Priority • ${event.time.substring(0, 5)}</p></div></div></div>`;
         });
     }
 }
@@ -148,8 +150,11 @@ window.editSchedule = function(id) {
     if(sch) {
         editingScheduleId = id; 
         document.getElementById('schedule-modal-title').innerText = "Edit Schedule";
-        document.getElementById('sch-title').value = sch.title; document.getElementById('sch-date').value = sch.date;
-        document.getElementById('sch-time').value = sch.time; document.getElementById('sch-priority').value = sch.priority;
+        document.getElementById('sch-title').value = sch.title; 
+        document.getElementById('sch-date').value = sch.date;
+        // FORMAT WAKTU PAS MAU DIEDIT BIAR GA ERROR DI INPUT
+        document.getElementById('sch-time').value = sch.time.substring(0, 5); 
+        document.getElementById('sch-priority').value = sch.priority;
         closeModal('dailyModal'); document.getElementById('scheduleModal').style.display = 'flex';
     }
 }
