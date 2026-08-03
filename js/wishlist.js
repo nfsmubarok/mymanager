@@ -4,6 +4,27 @@ let activeEditId = null;
 function formatRp(angka) { return angka >= 1000000 ? "Rp " + (angka / 1000000).toFixed(1).replace('.0', '') + " Jt" : "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 function formatRpFull(angka) { return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
+// --- TARIK DATA CLOUD ---
+async function fetchCloudWishlists() {
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: dbWish, error } = await supabaseClient.from('wishlists').select('*').eq('user_id', user.id);
+        if (dbWish) {
+            wishlists = dbWish.map(w => ({
+                id: w.id,
+                title: w.title,
+                targetAmount: w.target_amount,
+                currentAmount: w.current_amount,
+                plans: typeof w.plans === 'string' ? JSON.parse(w.plans) : (w.plans || [])
+            }));
+            localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+            renderWishlists();
+        }
+    } catch (err) { console.error("Fetch Wishlists Error:", err); }
+}
+
 window.renderWishlists = function() {
     const container = document.getElementById('wishlist-container');
     container.innerHTML = '';
@@ -20,7 +41,7 @@ window.renderWishlists = function() {
         }
         const barColor = percent >= 100 ? 'var(--ocean-blue)' : 'var(--matcha-green)';
         container.innerHTML += `
-            <div class="box" style="border-top: 4px solid ${barColor};" onclick="openEditModal(${wish.id})">
+            <div class="box" style="border-top: 4px solid ${barColor};" onclick="openEditModal('${wish.id}')">
                 <div class="box-header">
                     <h3 style="font-size: 18px;">${percent >= 100 ? '🎉' : '🎯'} ${wish.title}</h3>
                     <span class="price-badge">${formatRp(wish.targetAmount)}</span>
@@ -42,22 +63,35 @@ window.openAddModal = function() {
 }
 
 window.saveNewWish = async function() {
-    const title = document.getElementById('wish-title').value, targetAmount = parseInt(document.getElementById('wish-target').value), currentAmount = parseInt(document.getElementById('wish-current').value) || 0;
+    const title = document.getElementById('wish-title').value;
+    const targetAmount = parseInt(document.getElementById('wish-target').value);
+    const currentAmount = parseInt(document.getElementById('wish-current').value) || 0;
     const plansText = document.getElementById('wish-plans').value;
+
     if(!title || isNaN(targetAmount)) return alert("Title dan Target wajib diisi!");
-    
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
     let plansArray = plansText.trim() !== '' ? plansText.split('\n').filter(p => p.trim() !== '').map((text, index) => ({ id: index, text: text.trim(), done: false })) : [];
 
-    const { error } = await supabaseClient.from('wishlists').insert([{ title: title, target_amount: targetAmount, current_amount: currentAmount, plans: JSON.stringify(plansArray) }]);
+    const payload = { 
+        title: title, target_amount: targetAmount, current_amount: currentAmount, 
+        plans: JSON.stringify(plansArray), user_id: user ? user.id : null 
+    };
+
+    const { data: dbData, error } = await supabaseClient.from('wishlists').insert([payload]).select();
     if (error) return alert("Gagal simpan wishlist!");
-    
-    wishlists.push({ id: Date.now(), title, targetAmount, currentAmount, plans: plansArray });
+
+    if (dbData && dbData.length > 0) {
+        const w = dbData[0];
+        wishlists.push({ id: w.id, title: w.title, targetAmount: w.target_amount, currentAmount: w.current_amount, plans: plansArray });
+    }
+
     localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
     closeModal('addWishModal'); renderWishlists();
 }
 
 window.openEditModal = function(id) {
-    const wish = wishlists.find(w => w.id === id);
+    const wish = wishlists.find(w => w.id == id);
     if(!wish) return;
     activeEditId = id;
     document.getElementById('edit-modal-title').innerText = wish.title;
@@ -72,13 +106,22 @@ window.openEditModal = function(id) {
     openModal('editWishModal');
 }
 
-window.saveEditWish = function() {
-    const wishIndex = wishlists.findIndex(w => w.id === activeEditId);
+window.saveEditWish = async function() {
+    const wishIndex = wishlists.findIndex(w => w.id == activeEditId);
     if(wishIndex === -1) return;
+    
     wishlists[wishIndex].currentAmount = parseInt(document.getElementById('edit-wish-current').value) || 0;
     if(wishlists[wishIndex].plans) {
         wishlists[wishIndex].plans.forEach(plan => { const cb = document.getElementById(`plan-${plan.id}`); if(cb) plan.done = cb.checked; });
     }
+
+    // Save update ke cloud
+    const payload = {
+        current_amount: wishlists[wishIndex].currentAmount,
+        plans: JSON.stringify(wishlists[wishIndex].plans)
+    };
+    await supabaseClient.from('wishlists').update(payload).eq('id', activeEditId);
+
     localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
     closeModal('editWishModal'); renderWishlists();
 }
@@ -86,10 +129,19 @@ window.saveEditWish = function() {
 let confirmAction = null; 
 window.customConfirm = function(message, actionCallback) { document.getElementById('confirm-msg').innerText = message; confirmAction = actionCallback; document.getElementById('confirmModal').style.display = 'flex'; }
 window.executeConfirm = function() { if(confirmAction) { confirmAction(); confirmAction = null; } closeModal('confirmModal'); }
+
 window.triggerDeleteWish = function() {
-    customConfirm(`Yakin mau menghapus wishlist ini?`, () => { wishlists = wishlists.filter(w => w.id !== activeEditId); localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists)); closeModal('editWishModal'); renderWishlists(); });
+    customConfirm(`Yakin mau menghapus wishlist ini?`, async () => {
+        const { error } = await supabaseClient.from('wishlists').delete().eq('id', activeEditId);
+        if(error) return alert("Gagal hapus wishlist!");
+
+        wishlists = wishlists.filter(w => w.id != activeEditId);
+        localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
+        closeModal('editWishModal'); renderWishlists();
+    });
 }
+
 window.openModal = function(modalId) { document.getElementById(modalId).style.display = 'flex'; }
 window.closeModal = function(modalId) { document.getElementById(modalId).style.display = 'none'; }
 window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = "none"; }
-window.onload = () => { if(typeof checkAuth === 'function') checkAuth(); renderWishlists(); };
+window.onload = () => { if(typeof checkAuth === 'function') checkAuth(); fetchCloudWishlists(); };
