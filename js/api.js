@@ -117,21 +117,29 @@ window.saveTransfer = async function() {
 
 // --- FUNGSI SAVE WALLET (FIX ERROR 400) ---
 window.saveWallet = async function() {
-    let name = document.getElementById('wallet-name').value;
-    let balance = parseInt(document.getElementById('wallet-balance').value);
-    if(!name || isNaN(balance)) { showToast("Isi nama dan saldo awalnya!", true); return; }
+    let nameVal = document.getElementById('wallet-name').value;
+    let balanceVal = parseInt(document.getElementById('wallet-balance').value);
+    
+    if(!nameVal || isNaN(balanceVal)) { 
+        showToast("Isi nama dan saldo awalnya!", true); 
+        return; 
+    }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Fix: Pastikan key 'name' sesuai dengan nama kolom di Supabase lu
-    const payload = { name: name, balance: balance, user_id: user ? user.id : null };
+    // Kita coba pakai 'nama' (kalau di DB lu ternyata pakenya 'name', tinggal ganti aja kata 'nama:' di bawah ini jadi 'name:')
+    const payload = { 
+        nama: nameVal, 
+        balance: balanceVal, 
+        user_id: user ? user.id : null 
+    };
 
     const { error } = await supabaseClient.from('wallets').insert([payload]).select();
+    
     if (error) { 
-        console.error(error);
-        // Kalau masih error, berarti nama kolom di DB lu beneran "nama". 
-        // Lu tinggal ganti "name: name" di atas jadi "nama: name"
-        showToast("Gagal simpan wallet! Cek nama kolom di DB.", true); 
+        console.error("Supabase Error Detail:", error);
+        // Alert ini bakal ngasih tau lu persis kolom apa yang kurang/salah
+        alert(`Gagal! Kata Supabase: ${error.message}\n\nSolusi: Cek Table Editor, pastikan kolom 'nama' dan 'user_id' beneran ada.`); 
         return; 
     }
 
