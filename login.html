@@ -23,6 +23,12 @@
 
         <button class="btn-auth" id="btn-submit" onclick="handleAuth()">Login</button>
 
+        <div style="text-align: center; margin: 15px 0;">
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: bold;">OR</span>
+        </div>
+        <button class="btn-auth" style="background: var(--matcha-green); margin-top: 0;" onclick="loginAsDemo()">Try Demo Account</button>
+        <div class="toggle-text" id="toggle-container">
+
         <div class="toggle-text" id="toggle-container">
             Don't have an account? <span onclick="toggleMode()">Sign Up</span>
         </div>
@@ -89,6 +95,24 @@
             }
         }
 
+        // Fungsi Khusus Tombol Demo
+        async function loginAsDemo() {
+            showToast("Memasuki Akun Demo...");
+            
+            // Ganti email dan password ini SESUAI yang lu bikin di Supabase tadi
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+                email: 'demo@finzen.com', 
+                password: 'demo1234' 
+            });
+
+            if(error) {
+                showToast("Gagal login demo: " + error.message, true);
+            } else {
+                showToast("Selamat datang di Demo! Mengalihkan...");
+                setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+            }
+        }
+        
         // Cek kalau udah login, otomatis pindah ke index.html
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
