@@ -76,8 +76,11 @@
                 </div>
 
                 <div class="box">
-                    <div class="box-header"><h3>Statistics (Expenses This Month)</h3></div>
-                    <div id="stats-list"></div>
+                    <div class="box-header" style="margin-bottom: 5px;"><h3>Statistics (Expenses This Month)</h3></div>
+                    <div style="position: relative; height: 220px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                        <canvas id="expenseChart"></canvas>
+                        <div id="empty-stats" class="empty-state" style="display: none; position: absolute;">Belum ada pengeluaran bulan ini.</div>
+                    </div>
                 </div>
             </div>
 
@@ -187,6 +190,7 @@
 
     <div id="toast">Message Here</div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>

@@ -1,3 +1,5 @@
+let expenseChartInstance = null;
+
 // --- UTILITIES (ANTI CRASH) ---
 function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
@@ -77,7 +79,71 @@ function updateDashboard() {
     if(document.getElementById('display-total-income')) document.getElementById('display-total-income').innerText = formatRp(totalIncome);
     if(document.getElementById('display-total-expense')) document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
     if(document.getElementById('display-total-savings')) document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
+    
+    // --- LOGIKA BIKIN PIE CHART STATISTICS ---
+    const chartCanvas = document.getElementById('expenseChart');
+    const emptyStats = document.getElementById('empty-stats');
 
+    if (chartCanvas && emptyStats) {
+        if (Object.keys(expensesByCategory).length === 0) {
+            chartCanvas.style.display = 'none';
+            emptyStats.style.display = 'block';
+        } else {
+            chartCanvas.style.display = 'block';
+            emptyStats.style.display = 'none';
+
+            const labels = Object.keys(expensesByCategory);
+            const data = Object.values(expensesByCategory);
+            
+            // Pakai palette warna Zen bawaan CSS lu
+            const bgColors = ['#D98C8C', '#7B9095', '#8F9779', '#E2E8F0', '#F6AD55', '#B794F4'];
+
+            // Hancurin chart lama kalau ada, biar pas nambah data grafiknya ga numpuk/nge-glitch
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy(); 
+            }
+
+            const ctx = chartCanvas.getContext('2d');
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut', // Doughnut itu Pie Chart versi bolong tengah biar lebih estetik modern
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { 
+                                font: { size: 11, family: "'Segoe UI', Tahoma, sans-serif" },
+                                color: '#718096',
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                // Rumus otomatis nampilin harga + persentase
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let val = context.raw || 0;
+                                    let percentage = ((val / totalExpense) * 100).toFixed(1) + '%';
+                                    return ` ${label}: ${formatRp(val)} (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    // -----------------------------------------
     // Wallets List
     const walletsListDiv = document.getElementById('wallets-list');
     if (walletsListDiv) {
