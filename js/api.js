@@ -127,19 +127,30 @@ window.saveWallet = async function() {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Kita coba pakai 'nama' (kalau di DB lu ternyata pakenya 'name', tinggal ganti aja kata 'nama:' di bawah ini jadi 'name:')
-    const payload = { 
-        nama: nameVal, 
+    // 1. Coba simpan pakai nama kolom 'name'
+    let payload = { 
+        name: nameVal, 
         balance: balanceVal, 
         user_id: user ? user.id : null 
     };
 
-    const { error } = await supabaseClient.from('wallets').insert([payload]).select();
+    let { error } = await supabaseClient.from('wallets').insert([payload]).select();
     
+    // 2. Kalau gagal karena kolom 'name' gak ada, otomatis coba pakai 'nama'
+    if (error && (error.message.includes("name") || error.code === 'PGRST204')) {
+        payload = { 
+            nama: nameVal, 
+            balance: balanceVal, 
+            user_id: user ? user.id : null 
+        };
+        const retry = await supabaseClient.from('wallets').insert([payload]).select();
+        error = retry.error;
+    }
+
+    // 3. Jika masih ada error RLS atau kolom hilang lainnya
     if (error) { 
         console.error("Supabase Error Detail:", error);
-        // Alert ini bakal ngasih tau lu persis kolom apa yang kurang/salah
-        alert(`Gagal! Kata Supabase: ${error.message}\n\nSolusi: Cek Table Editor, pastikan kolom 'nama' dan 'user_id' beneran ada.`); 
+        alert(`Gagal Simpan Wallet!\nPesan Error: ${error.message}\n\nSolusi: Buka Supabase -> Table Editor -> 'wallets', pastikan ada kolom 'user_id' (tipe: uuid).`); 
         return; 
     }
 
