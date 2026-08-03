@@ -116,6 +116,7 @@ window.saveTransfer = async function() {
 }
 
 // --- FUNGSI SAVE WALLET (FIX ERROR 400) ---
+// --- FUNGSI SAVE WALLET (FIX ID NULL CONSTRAINT & SESUAI DB) ---
 window.saveWallet = async function() {
     let nameVal = document.getElementById('wallet-name').value;
     let balanceVal = parseInt(document.getElementById('wallet-balance').value);
@@ -126,31 +127,24 @@ window.saveWallet = async function() {
     }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    
-    // 1. Coba simpan pakai nama kolom 'name'
-    let payload = { 
-        name: nameVal, 
-        balance: balanceVal, 
-        user_id: user ? user.id : null 
-    };
-
-    let { error } = await supabaseClient.from('wallets').insert([payload]).select();
-    
-    // 2. Kalau gagal karena kolom 'name' gak ada, otomatis coba pakai 'nama'
-    if (error && (error.message.includes("name") || error.code === 'PGRST204')) {
-        payload = { 
-            nama: nameVal, 
-            balance: balanceVal, 
-            user_id: user ? user.id : null 
-        };
-        const retry = await supabaseClient.from('wallets').insert([payload]).select();
-        error = retry.error;
+    if (!user) {
+        showToast("Sesi habis, silakan login ulang!", true);
+        return;
     }
 
-    // 3. Jika masih ada error RLS atau kolom hilang lainnya
+    // Masukkan 'id' acak unik + nama kolom 'nama', 'balance', 'user_id' sesuai Supabase lu
+    const payload = { 
+        id: crypto.randomUUID(), // Generator ID unik otomatis
+        nama: nameVal, 
+        balance: balanceVal, 
+        user_id: user.id 
+    };
+
+    const { data: dbData, error } = await supabaseClient.from('wallets').insert([payload]).select();
+    
     if (error) { 
         console.error("Supabase Error Detail:", error);
-        alert(`Gagal Simpan Wallet!\nPesan Error: ${error.message}\n\nSolusi: Buka Supabase -> Table Editor -> 'wallets', pastikan ada kolom 'user_id' (tipe: uuid).`); 
+        alert(`Gagal simpan wallet!\nPesan Supabase: ${error.message}`); 
         return; 
     }
 
