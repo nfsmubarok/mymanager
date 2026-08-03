@@ -101,8 +101,8 @@
             
             // Ganti email dan password ini SESUAI yang lu bikin di Supabase tadi
             const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-                email: 'demo@finzen.com', 
-                password: 'demo1234' 
+                email: 'demo@zendash.com', 
+                password: 'demo123' 
             });
 
             if(error) {
@@ -112,7 +112,7 @@
                 setTimeout(() => { window.location.href = 'index.html'; }, 1000);
             }
         }
-        
+
         // Cek kalau udah login, otomatis pindah ke index.html
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
