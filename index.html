@@ -1,201 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マネージャー Dashboard - Money</title>
+    <title>Keuangan · マネージャー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&display=swap">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Langsung ke konten</a>
 
-    <div class="sidebar">
-        <div class="logo">マネージャー</div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Main Dashboard</div>
-            <a href="index.html" class="menu-item active">Money Manager</a>
-            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
-            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
-        </div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Leisure & Notes</div>
-            <a href="hobbies.html" class="menu-item">My Hobbies</a>
-            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-            <a href="minigames.html" class="menu-item">Mini Games</a>
-        </div>
-
-        <div style="margin-top: auto; padding: 0 24px;">
-            <button onclick="logout()" style="width: 100%; background: var(--sakura-pink); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(217, 140, 140, 0.2);">
-                Logout
-            </button>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="header">
-            <div>
-                <h1>Money Manager</h1>
-                <p>こんにちは (Konnichiwa), atur keuanganmu dengan tenang.</p>
+    <aside class="sidebar">
+        <div class="logo" lang="ja">マネージャー</div>
+        <nav aria-label="Menu utama">
+            <div class="menu-group">
+                <p class="menu-title">Harian</p>
+                <a href="index.html" class="menu-item active" aria-current="page">Keuangan</a>
+                <a href="schedule.html" class="menu-item">Jadwal &amp; tugas</a>
+                <a href="wishlist.html" class="menu-item">Wishlist</a>
             </div>
-            <button class="btn-add" onclick="openModal('transactionModal')">+ Add Transaction</button>
+            <div class="menu-group">
+                <p class="menu-title">Santai &amp; catatan</p>
+                <a href="hobbies.html" class="menu-item">Hobi</a>
+                <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+                <a href="minigames.html" class="menu-item">Sudoku</a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button type="button" class="btn-logout" id="btn-logout">Keluar</button>
         </div>
-        
-        <div class="summary-grid">
-            <div class="card balance">
-                <div class="card-title">Current Balance
+    </aside>
+
+    <main class="main-content" id="main">
+        <header class="header">
+            <div>
+                <h1>Keuangan <span class="jp" lang="ja" aria-hidden="true">お金</span></h1>
+                <p>こんにちは. Atur duit lu pelan-pelan, ga usah buru-buru.</p>
+            </div>
+            <button type="button" class="btn-add" onclick="openModal('transactionModal')">+ Catat transaksi</button>
+        </header>
+
+        <section class="summary" aria-label="Ringkasan saldo">
+            <div class="summary-main">
+                <div class="summary-label">
+                    <label for="main-wallet-select">Saldo dompet</label>
                     <select id="main-wallet-select" class="wallet-select" onchange="updateCurrentBalanceDisplay()"></select>
                 </div>
-                <div class="card-amount" id="display-current-balance">Rp 0</div>
-                <p style="font-size: 12px; color: var(--text-muted);">Saldo dompet terpilih</p>
+                <p class="summary-amount" id="display-current-balance" aria-live="polite">Memuat...</p>
+                <p class="summary-foot">Total semua dompet: <strong id="display-total-savings">Memuat...</strong></p>
             </div>
-            <div class="card income">
-                <div class="card-title">Total Income</div>
-                <div class="card-amount text-green" id="display-total-income">Rp 0</div>
-                <p style="font-size: 12px; color: var(--text-muted);">This month</p>
+            <div class="summary-month">
+                <h2 id="month-heading">Bulan ini</h2>
+                <div class="month-row"><span>Masuk</span><strong class="text-green" id="display-total-income">Memuat...</strong></div>
+                <div class="month-row"><span>Keluar</span><strong class="text-red" id="display-total-expense">Memuat...</strong></div>
+                <div class="month-row"><span>Selisih</span><strong id="display-net">Memuat...</strong></div>
             </div>
-            <div class="card expense">
-                <div class="card-title">Total Expenses</div>
-                <div class="card-amount text-red" id="display-total-expense">Rp 0</div>
-                <p style="font-size: 12px; color: var(--text-muted);">This month</p>
-            </div>
-            <div class="card">
-                <div class="card-title">Total Savings</div>
-                <div class="card-amount text-blue" id="display-total-savings">Rp 0</div>
-                <p style="font-size: 12px; color: var(--text-muted);">Across all wallets</p>
-            </div>
-        </div>
+        </section>
 
         <div class="content-grid">
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="box">
-                    <div class="box-header" style="margin-bottom: 10px;">
-                        <h3>Recent Transactions</h3>
-                    </div>
+            <div class="stack">
+                <section class="box" aria-labelledby="recent-heading">
+                    <div class="box-header"><h2 id="recent-heading">Transaksi terakhir</h2></div>
                     <div id="recent-tx-list"></div>
-                </div>
+                </section>
 
-                <div class="box">
-                    <div class="box-header" style="margin-bottom: 5px;"><h3>Statistics (Expenses This Month)</h3></div>
-                    <div style="position: relative; height: 220px; width: 100%; display: flex; justify-content: center; align-items: center;">
-                        <canvas id="expenseChart"></canvas>
-                        <div id="empty-stats" class="empty-state" style="display: none; position: absolute;">Belum ada pengeluaran bulan ini.</div>
+                <section class="box" aria-labelledby="stats-heading">
+                    <div class="box-header"><h2 id="stats-heading">Pengeluaran bulan ini per kategori</h2></div>
+                    <div class="chart-wrap">
+                        <canvas id="expenseChart" role="img" aria-label="Diagram pengeluaran bulan ini per kategori" width="400" height="220"></canvas>
+                        <div id="chart-state" class="state" hidden></div>
                     </div>
-                </div>
+                </section>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="box">
+            <div class="stack">
+                <section class="box" aria-labelledby="wallets-heading">
                     <div class="box-header">
-                        <h3>Wallets</h3>
-                        <button class="btn-small" onclick="openModal('walletModal')">+ Add</button>
+                        <h2 id="wallets-heading">Dompet</h2>
+                        <button type="button" class="btn-small" onclick="openModal('walletModal')">+ Tambah</button>
                     </div>
                     <div id="wallets-list"></div>
-                </div>
+                </section>
 
-                <div class="box">
-                    <h3>Transfer Wallets</h3>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px; margin-bottom: 15px;">Pindah saldo antar rekening/dompet.</p>
-                    <button class="btn-add" style="width: 100%; background: var(--ocean-blue);" onclick="openModal('transferModal')">🔄 Make a Transfer</button>
-                </div>
+                <section class="box" aria-labelledby="transfer-heading">
+                    <h2 id="transfer-heading">Pindahin saldo</h2>
+                    <p class="box-note">Dari satu rekening atau dompet ke yang lain.</p>
+                    <button type="button" class="btn-submit btn-secondary btn-block" onclick="openModal('transferModal')">Bikin transfer</button>
+                </section>
             </div>
         </div>
 
-        <div class="box" style="margin-bottom: 30px;">
+        <section class="box box-spaced" aria-labelledby="all-heading">
             <div class="box-header">
-                <h3>All Transactions</h3>
-                <select id="filter-month" class="form-input" style="width: auto; padding: 6px 30px 6px 12px;" onchange="renderAllTransactions()">
-                    <option value="all">All Months</option>
-                    <option value="0">January</option><option value="1">February</option><option value="2">March</option>
-                    <option value="3">April</option><option value="4">May</option><option value="5">June</option>
-                    <option value="6">July</option><option value="7">August</option><option value="8">September</option>
-                    <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                <h2 id="all-heading">Semua transaksi</h2>
+                <label class="visually-hidden" for="filter-month">Filter bulan</label>
+                <select id="filter-month" class="form-input select-inline" onchange="renderAllTransactions()">
+                    <option value="all">Semua bulan</option>
+                    <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                    <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                    <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                    <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
                 </select>
             </div>
             <div id="all-tx-list"></div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <div id="transactionModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h2 id="tx-modal-title">Add Transaction</h2><button class="close-btn" onclick="closeModal('transactionModal')">✕</button></div>
-            <div class="form-group"><label>Type</label>
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="tx-modal-title">
+            <div class="modal-header"><h2 id="tx-modal-title">Catat transaksi</h2><button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('transactionModal')"><span aria-hidden="true">✕</span></button></div>
+            <fieldset class="form-group">
+                <legend class="form-label">Jenis</legend>
                 <div class="radio-group">
-                    <div class="radio-btn"><input type="radio" id="type-income" name="tx-type" value="income" checked><label for="type-income">Income</label></div>
-                    <div class="radio-btn expense"><input type="radio" id="type-expense" name="tx-type" value="expense"><label for="type-expense">Expense</label></div>
+                    <div class="radio-btn"><input type="radio" id="type-income" name="tx-type" value="income" checked><label for="type-income">Pemasukan</label></div>
+                    <div class="radio-btn expense"><input type="radio" id="type-expense" name="tx-type" value="expense"><label for="type-expense">Pengeluaran</label></div>
                 </div>
-            </div>
-            <div class="form-group"><label>Description</label><input type="text" id="tx-desc" class="form-input" placeholder="e.g., Makan siang"></div>
-            <div class="form-group"><label>Amount (Rp)</label><input type="number" id="tx-amount" class="form-input" placeholder="0"></div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group"><label>Date</label><input type="date" id="tx-date" class="form-input"></div>
-                <div class="form-group"><label>Category</label>
+            </fieldset>
+            <div class="form-group"><label for="tx-desc">Keterangan</label><input type="text" id="tx-desc" class="form-input" placeholder="Misal: makan siang"></div>
+            <div class="form-group"><label for="tx-amount">Jumlah (Rp)</label><input type="number" id="tx-amount" class="form-input" inputmode="numeric" min="0" placeholder="0"></div>
+            <div class="form-row">
+                <div class="form-group"><label for="tx-date">Tanggal</label><input type="date" id="tx-date" class="form-input"></div>
+                <div class="form-group"><label for="tx-category">Kategori</label>
                     <select id="tx-category" class="form-input">
-                        <option>Food & Drinks</option><option>Transport</option><option>Salary</option>
-                        <option>Entertainment</option><option>Shopping</option><option>Other</option>
+                        <option value="Food & Drinks">Makan &amp; minum</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Salary">Gaji</option>
+                        <option value="Entertainment">Hiburan</option>
+                        <option value="Shopping">Belanja</option>
+                        <option value="Other">Lainnya</option>
                     </select>
                 </div>
             </div>
-            <div class="form-group"><label>Wallet</label><select id="tx-wallet" class="form-input"></select></div>
-            <div class="form-group"><label>Note (Optional)</label><input type="text" id="tx-note" class="form-input" placeholder="Additional details..."></div>
+            <div class="form-group"><label for="tx-wallet">Dompet</label><select id="tx-wallet" class="form-input"></select></div>
+            <div class="form-group"><label for="tx-note">Catatan (opsional)</label><input type="text" id="tx-note" class="form-input"></div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('transactionModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveTransaction()">Save Transaction</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('transactionModal')">Batal</button>
+                <button type="button" class="btn-submit" id="btn-save-tx" onclick="saveTransaction()">Simpan</button>
             </div>
         </div>
     </div>
 
     <div id="walletModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Add New Wallet</h2><button class="close-btn" onclick="closeModal('walletModal')">✕</button></div>
-            <div class="form-group"><label>Wallet Name</label><input type="text" id="wallet-name" class="form-input" placeholder="e.g., Bank Jago"></div>
-            <div class="form-group"><label>Initial Balance (Rp)</label><input type="number" id="wallet-balance" class="form-input" placeholder="0"></div>
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title">
+            <div class="modal-header"><h2 id="wallet-modal-title">Tambah dompet</h2><button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('walletModal')"><span aria-hidden="true">✕</span></button></div>
+            <div class="form-group"><label for="wallet-name">Nama dompet</label><input type="text" id="wallet-name" class="form-input" placeholder="Misal: Bank Jago"></div>
+            <div class="form-group"><label for="wallet-balance">Saldo awal (Rp)</label><input type="number" id="wallet-balance" class="form-input" inputmode="numeric" placeholder="0"></div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('walletModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveWallet()">Save Wallet</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('walletModal')">Batal</button>
+                <button type="button" class="btn-submit" id="btn-save-wallet" onclick="saveWallet()">Simpan dompet</button>
             </div>
         </div>
     </div>
 
     <div id="transferModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h2 id="transfer-modal-title">Transfer Balance</h2><button class="close-btn" onclick="closeModal('transferModal')">✕</button></div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group"><label>From</label><select id="transfer-from" class="form-input"></select></div>
-                <div class="form-group"><label>To</label><select id="transfer-to" class="form-input"></select></div>
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
+            <div class="modal-header"><h2 id="transfer-modal-title">Pindahin saldo</h2><button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('transferModal')"><span aria-hidden="true">✕</span></button></div>
+            <div class="form-row">
+                <div class="form-group"><label for="transfer-from">Dari</label><select id="transfer-from" class="form-input"></select></div>
+                <div class="form-group"><label for="transfer-to">Ke</label><select id="transfer-to" class="form-input"></select></div>
             </div>
-            <div class="form-group"><label>Amount (Rp)</label><input type="number" id="transfer-amount" class="form-input" placeholder="0"></div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group"><label>Date</label><input type="date" id="transfer-date" class="form-input"></div>
-                <div class="form-group"><label>Note (Optional)</label><input type="text" id="transfer-note" class="form-input" placeholder="Notes..."></div>
+            <div class="form-group"><label for="transfer-amount">Jumlah (Rp)</label><input type="number" id="transfer-amount" class="form-input" inputmode="numeric" min="0" placeholder="0"></div>
+            <div class="form-row">
+                <div class="form-group"><label for="transfer-date">Tanggal</label><input type="date" id="transfer-date" class="form-input"></div>
+                <div class="form-group"><label for="transfer-note">Catatan (opsional)</label><input type="text" id="transfer-note" class="form-input"></div>
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveTransfer()">Save Transfer</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('transferModal')">Batal</button>
+                <button type="button" class="btn-submit" id="btn-save-transfer" onclick="saveTransfer()">Simpan transfer</button>
             </div>
         </div>
     </div>
 
-    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
-        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
-            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
-            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
-            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus?</p>
-            <div style="display: flex; justify-content: center; gap: 12px;">
-                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
-                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
-            </div>
-        </div>
-    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
 
-    <div id="toast">Message Here</div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
-</body>
-</html>
 </body>
 </html>

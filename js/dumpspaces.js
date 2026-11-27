@@ -1,185 +1,141 @@
-let dumps = JSON.parse(localStorage.getItem('finzen_dumps')) || [];
+let dumps = [];
 
-window.showToast = function(msg) {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.innerText = msg; t.style.bottom = '30px'; t.style.opacity = '1';
-    setTimeout(() => { t.style.bottom = '-50px'; t.style.opacity = '0'; }, 3000);
-}
+const dumpTypes = {
+    Note: { label: 'Catatan', badge: 'type-note' },
+    Link: { label: 'Link', badge: 'type-link' },
+    Image: { label: 'Gambar', badge: 'type-image' }
+};
 
-// --- FUNGSI TARIK DATA KHUSUS USER LOGIN ---
+// --- TARIK DATA ---
 async function fetchCloudDumps() {
+    const container = document.getElementById('dumps-container');
+    showLoading(container);
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
-
-        // Tarik data HANYA milik user_id yang sedang login
-        const { data: dbDumps, error } = await supabaseClient
-            .from('dumpspaces')
-            .select('*')
-            .eq('user_id', user.id);
-
-        if (dbDumps) {
-            dumps = dbDumps;
-            localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
-            renderDumps();
-        }
+        const { data, error } = await supabaseClient.from('dumpspaces').select('*').eq('user_id', user.id);
+        if (error) throw error;
+        dumps = data || [];
+        renderDumps();
     } catch (err) {
-        console.error("Fetch Dumps Error:", err);
+        console.error('Fetch dumps error:', err);
+        showError(container, 'Dumpspace ga kebaca. Cek koneksi lu, terus coba lagi.', fetchCloudDumps);
     }
 }
 
-// --- RENDER UI ---
-window.renderDumps = function() {
-    const container = document.getElementById('dumps-container'); 
-    if(!container) return;
-    container.innerHTML = '';
-    
-    if (dumps.length === 0) return container.innerHTML = `<div class="empty-state"><span style="font-size: 24px; display: block; margin-bottom: 10px;">📦</span>Masih kosong. Mulai buang link, ide, atau gambar lu kesini!</div>`;
+function renderDumps() {
+    const container = document.getElementById('dumps-container');
+    if (!container) return;
+    clearBusy(container);
+    if (dumps.length === 0) {
+        container.innerHTML = '<div class="empty-state">Masih kosong. Buang link, ide, atau gambar pertama lu ke sini.</div>';
+        return;
+    }
 
-    dumps.sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    dumps.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-    dumps.forEach(dump => {
-        let badgeClass = '', contentHtml = '', titleHtml = dump.title ? `<h4 class="dump-title">${dump.title}</h4>` : '';
-        if (dump.type === 'Note') { badgeClass = 'type-note'; contentHtml = `<p class="dump-text">${dump.content}</p>`; } 
-        else if (dump.type === 'Link') { badgeClass = 'type-link'; contentHtml = `<a href="${dump.url}" target="_blank" class="dump-link">🔗 Visit Link ↗</a>`; if(dump.content) contentHtml = `<p class="dump-text" style="margin-bottom:8px;">${dump.content}</p>` + contentHtml; } 
-        else if (dump.type === 'Image') { badgeClass = 'type-image'; }
+    container.innerHTML = dumps.map(dump => {
+        const cfg = dumpTypes[dump.type] || dumpTypes.Note;
+        const url = safeUrl(dump.url);
+        const label = dump.title || cfg.label;
+        let media = '';
+        let body = '';
 
-        container.innerHTML += `
-            <div class="dump-card">
-                ${dump.type === 'Image' ? `<img src="${dump.url}" alt="Dumped Image" class="dump-image" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">` : ''}
-                <div class="dump-header">
-                    <span class="dump-type-badge ${badgeClass}">${dump.type}</span>
-                    <button class="btn-delete-card" onclick="triggerDeleteDump('${dump.id}')">🗑️</button>
-                </div>
-                <div class="dump-body">
-                    ${titleHtml}
-                    ${contentHtml}
-                    ${dump.type === 'Image' && dump.content ? `<p class="dump-text" style="margin-top:8px;">${dump.content}</p>` : ''}
-                    <p style="font-size: 10px; color: var(--text-muted); margin-top: 12px; text-align: right;">${dump.date || ''}</p>
-                </div>
-            </div>`;
-    });
+        if (dump.type === 'Image' && url) {
+            media = `<img src="${esc(url)}" alt="${esc(dump.title || dump.content || 'Gambar yang di-dump')}" class="dump-image" width="400" height="300" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('p'), {className: 'state', textContent: 'Gambar ga bisa dimuat.'}))">`;
+        }
+        if (dump.title) body += `<h2 class="dump-title">${esc(dump.title)}</h2>`;
+        if (dump.content) body += `<p class="dump-text">${esc(dump.content)}</p>`;
+        if (dump.type === 'Link') {
+            body += url
+                ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="dump-link">Buka link <span class="visually-hidden">(tab baru)</span></a>`
+                : '<p class="dump-text">Link-nya ga valid.</p>';
+        }
+        if (dump.date) body += `<p class="dump-date">${esc(dump.date)}</p>`;
+
+        return `
+        <article class="dump-card">
+            ${media}
+            <div class="dump-header">
+                <span class="dump-type-badge ${cfg.badge}">${cfg.label}</span>
+                <button type="button" class="btn-text danger" onclick="triggerDeleteDump('${esc(dump.id)}')" aria-label="Hapus ${esc(label)}">Hapus</button>
+            </div>
+            <div class="dump-body">${body}</div>
+        </article>`;
+    }).join('');
 }
 
-window.toggleDumpFields = function() {
+function toggleDumpFields() {
     const type = document.getElementById('dump-type').value;
-    document.getElementById('field-note').style.display = 'none'; 
-    document.getElementById('field-link').style.display = 'none'; 
-    document.getElementById('field-image').style.display = 'none';
-    document.getElementById('label-title').innerText = "Title (Optional)";
-    
-    if (type === 'Note') { document.getElementById('field-note').style.display = 'block'; } 
-    else if (type === 'Link') { document.getElementById('field-link').style.display = 'block'; document.getElementById('field-note').style.display = 'block'; document.getElementById('label-title').innerText = "Link Title"; } 
-    else if (type === 'Image') { document.getElementById('field-image').style.display = 'block'; document.getElementById('field-note').style.display = 'block'; document.getElementById('label-title').innerText = "Caption / Title (Optional)"; }
+    document.getElementById('field-link').hidden = type !== 'Link';
+    document.getElementById('field-image').hidden = type !== 'Image';
+    document.getElementById('label-title').textContent = type === 'Link' ? 'Judul link' : (type === 'Image' ? 'Judul gambar (opsional)' : 'Judul (opsional)');
+    document.getElementById('label-content').textContent = type === 'Note' ? 'Isi catatan' : 'Keterangan (opsional)';
 }
 
-window.openDumpModal = function() {
-    document.getElementById('dump-title').value = ''; 
-    document.getElementById('dump-content').value = ''; 
-    document.getElementById('dump-url').value = ''; 
-    document.getElementById('dump-file').value = ''; 
+function openDumpModal() {
+    ['dump-title', 'dump-content', 'dump-url', 'dump-file'].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('dump-type').value = 'Note';
-    toggleDumpFields(); 
+    toggleDumpFields();
     openModal('dumpModal');
 }
 
-// --- SAVE DUMP (DENGAN USER_ID & RETURN ID SUPABASE) ---
-window.saveDump = async function() {
+function setDumpSaving(saving) {
     const btn = document.getElementById('btn-save-dump');
+    btn.disabled = saving;
+    btn.textContent = saving ? 'Menyimpan...' : 'Simpan';
+}
+
+async function saveDump() {
     const type = document.getElementById('dump-type').value;
-    const title = document.getElementById('dump-title').value;
-    const content = document.getElementById('dump-content').value;
-    const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const title = document.getElementById('dump-title').value.trim();
+    const content = document.getElementById('dump-content').value.trim();
+    const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
     let finalUrl = '';
-    
-    if(type === 'Note' && !title && !content) return alert("Isi notesnya dong!");
-    if(type === 'Link') { finalUrl = document.getElementById('dump-url').value; if(!finalUrl) return alert("URL Linknya jangan kosong!"); }
 
-    btn.innerText = "Saving..."; btn.disabled = true;
+    if (type === 'Note' && !title && !content) { showToast('Isi catatannya dulu.', true); return; }
+    if (type === 'Link') {
+        finalUrl = safeUrl(document.getElementById('dump-url').value.trim());
+        if (!finalUrl) { showToast('URL-nya harus diawali http:// atau https://.', true); return; }
+    }
+    const fileInput = document.getElementById('dump-file');
+    if (type === 'Image' && (!fileInput.files || fileInput.files.length === 0)) { showToast('Pilih gambarnya dulu.', true); return; }
 
-    // Ambil user yang sedang login
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    setDumpSaving(true);
+    const user = await getCurrentUser();
 
-    if(type === 'Image') {
-        const fileInput = document.getElementById('dump-file');
-        if(!fileInput.files || fileInput.files.length === 0) { alert("Pilih gambarnya dulu!"); btn.innerText = "Drop it!"; btn.disabled = false; return; }
+    if (type === 'Image') {
         const file = fileInput.files[0];
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
-        
+        const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '').toLowerCase();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${ext}`;
         const { error: uploadError } = await supabaseClient.storage.from('dumps-images').upload(fileName, file);
-        if(uploadError) { alert("Gagal upload gambar ke cloud!"); btn.innerText = "Drop it!"; btn.disabled = false; return; }
-        
+        if (uploadError) { showToast('Gagal upload gambar.', true); setDumpSaving(false); return; }
         finalUrl = supabaseClient.storage.from('dumps-images').getPublicUrl(fileName).data.publicUrl;
     }
 
-    // Sisipkan user_id
-    const payload = { 
-        type, 
-        title, 
-        content, 
-        url: finalUrl, 
-        date: dateStr,
-        user_id: user ? user.id : null 
-    };
+    const payload = { type, title, content, url: finalUrl, date: dateStr, user_id: user ? user.id : null };
+    const { data, error } = await supabaseClient.from('dumpspaces').insert([payload]).select();
+    setDumpSaving(false);
 
-    // Tambahkan .select() agar Supabase mengembalikan row beserta ID aslinya
-    const { data: dbData, error: dbError } = await supabaseClient
-        .from('dumpspaces')
-        .insert([payload])
-        .select();
+    if (error) { console.error(error); showToast('Gagal nyimpen ke database.', true); return; }
+    if (data && data.length > 0) dumps.push(data[0]);
 
-    if (dbError) { 
-        console.error(dbError);
-        alert("Gagal simpan ke database!"); 
-        btn.innerText = "Drop it!"; 
-        btn.disabled = false; 
-        return; 
-    }
-
-    if (dbData && dbData.length > 0) {
-        dumps.push(dbData[0]); // Pakai objek dengan ID asli dari Supabase
-    }
-
-    localStorage.setItem('finzen_dumps', JSON.stringify(dumps));
-    btn.innerText = "Drop it!"; btn.disabled = false; 
-    closeModal('dumpModal'); 
-    showToast("Dump saved!"); 
+    closeModal('dumpModal');
+    showToast('Tersimpan.');
     renderDumps();
 }
 
-// --- DELETE DUMP (MENGGUNAKAN ID ASLI SUPABASE) ---
-window.triggerDeleteDump = function(id) {
-    customConfirm(`Yakin mau ngebuang dump ini selamanya?`, async () => {
-        const { error } = await supabaseClient
-            .from('dumpspaces')
-            .delete()
-            .eq('id', id);
-
-        if(error) { 
-            console.error("Delete error:", error);
-            showToast("Gagal hapus dari cloud!", true); 
-            return; 
-        }
-
-        dumps = dumps.filter(d => d.id !== id && d.id != id); 
-        localStorage.setItem('finzen_dumps', JSON.stringify(dumps)); 
-        renderDumps(); 
-        showToast("Dump deleted!");
+function triggerDeleteDump(id) {
+    customConfirm('Yakin mau buang dump ini?', async () => {
+        const { error } = await supabaseClient.from('dumpspaces').delete().eq('id', id);
+        if (error) { console.error('Delete error:', error); showToast('Gagal hapus dump.', true); return; }
+        dumps = dumps.filter(d => d.id != id);
+        renderDumps();
+        showToast('Dump dihapus.');
     });
 }
 
-let confirmAction = null; 
-window.customConfirm = function(message, actionCallback) { document.getElementById('confirm-msg').innerText = message; confirmAction = actionCallback; document.getElementById('confirmModal').style.display = 'flex'; }
-window.executeConfirm = function() { if(confirmAction) { confirmAction(); confirmAction = null; } closeModal('confirmModal'); }
-
-window.openModal = function(modalId) { document.getElementById(modalId).style.display = 'flex'; }
-window.closeModal = function(modalId) { document.getElementById(modalId).style.display = 'none'; }
-window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = "none"; }
-
-window.onload = () => { 
-    if(typeof checkAuth === 'function') {
-        checkAuth();
-    }
-    fetchCloudDumps(); // Tarik data cloud khusus user login
-};
+document.addEventListener('DOMContentLoaded', async () => {
+    showLoading('dumps-container');
+    if (await requireAuth()) fetchCloudDumps();
+});

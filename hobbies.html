@@ -1,373 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マネージャー Dashboard - Money</title>
+    <title>Hobi · マネージャー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&display=swap">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Langsung ke konten</a>
 
-    <div class="sidebar">
-        <div class="logo">マネージャー</div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Main Dashboard</div>
-            <a href="index.html" class="menu-item">Money Manager</a>
-            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
-            <a href="wishlist.html" class="menu-item">Wishlist Tracker</a>
+    <aside class="sidebar">
+        <div class="logo" lang="ja">マネージャー</div>
+        <nav aria-label="Menu utama">
+            <div class="menu-group">
+                <p class="menu-title">Harian</p>
+                <a href="index.html" class="menu-item">Keuangan</a>
+                <a href="schedule.html" class="menu-item">Jadwal &amp; tugas</a>
+                <a href="wishlist.html" class="menu-item">Wishlist</a>
+            </div>
+            <div class="menu-group">
+                <p class="menu-title">Santai &amp; catatan</p>
+                <a href="hobbies.html" class="menu-item active" aria-current="page">Hobi</a>
+                <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+                <a href="minigames.html" class="menu-item">Sudoku</a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button type="button" class="btn-logout" id="btn-logout">Keluar</button>
         </div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Leisure & Notes</div>
-            <a href="hobbies.html" class="menu-item active">My Hobbies</a>
-            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-            <a href="minigames.html" class="menu-item">Mini Games</a>
-        </div>
+    </aside>
 
-        <div style="margin-top: auto; padding: 0 24px;">
-            <button onclick="logout()" style="width: 100%; background: var(--sakura-pink); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(217, 140, 140, 0.2);">
-                Logout
-            </button>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="header">
+    <main class="main-content" id="main">
+        <header class="header">
             <div>
-                <h1>My Hobbies</h1>
-                <p>Track your entertainment, rate your experiences.</p>
+                <h1>Hobi <span class="jp" lang="ja" aria-hidden="true">趣味</span></h1>
+                <p>Anime, film, series, game. Yang mau ditonton dan yang udah dikasih nilai.</p>
             </div>
-            <button class="btn-add" onclick="openAddModal()">+ Add New Entry</button>
-        </div>
-        
-        <div class="content-grid">
-            <div class="box">
-                <div class="box-header">
-                    <h3>Up Next (Watchlist)</h3>
-                </div>
-                <div id="watchlist-container">
-                    </div>
-            </div>
+            <button type="button" class="btn-add" onclick="openAddModal()">+ Tambah judul</button>
+        </header>
 
-            <div class="box">
-                <div class="box-header">
-                    <h3>Reviews & Ratings</h3>
-                </div>
-                <div class="rating-grid" id="ratings-container">
-                    </div>
-            </div>
+        <div class="content-grid">
+            <section class="box" aria-labelledby="rated-heading">
+                <div class="box-header"><h2 id="rated-heading">Udah ditonton atau dimainin</h2></div>
+                <div class="rating-grid" id="ratings-container"></div>
+            </section>
+
+            <section class="box" aria-labelledby="watch-heading">
+                <div class="box-header"><h2 id="watch-heading">Antrian berikutnya</h2></div>
+                <div id="watchlist-container"></div>
+            </section>
         </div>
-    </div>
+    </main>
 
     <div id="hobbyModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div class="modal-header">
-                <h2 id="modal-title">Add Entry</h2>
-                <button class="close-btn" onclick="closeModal('hobbyModal')">✕</button>
-            </div>
-            
-            <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="hobby-title" class="form-input" placeholder="e.g., One Piece, Valorant, Interstellar">
+                <h2 id="modal-title">Tambah judul</h2>
+                <button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('hobbyModal')"><span aria-hidden="true">✕</span></button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label for="hobby-title">Judul</label>
+                <input type="text" id="hobby-title" class="form-input" placeholder="Misal: One Piece, Interstellar">
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
-                    <label>Category</label>
+                    <label for="hobby-type">Kategori</label>
                     <select id="hobby-type" class="form-input">
                         <option value="Anime">Anime</option>
-                        <option value="Movie">Movie</option>
-                        <option value="Series">TV Series</option>
+                        <option value="Movie">Film</option>
+                        <option value="Series">Series</option>
                         <option value="Game">Game</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Status</label>
+                    <label for="hobby-status">Status</label>
                     <select id="hobby-status" class="form-input" onchange="toggleRatingArea()">
-                        <option value="Plan to Watch">Plan to Watch / Play</option>
-                        <option value="Completed">Completed / Rated</option>
+                        <option value="Plan to Watch">Mau ditonton / dimainin</option>
+                        <option value="Completed">Udah selesai</option>
                     </select>
                 </div>
             </div>
 
-            <div id="rating-area" style="display: none; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+            <div id="rating-area" class="rating-area" hidden>
                 <div class="form-group">
-                    <label>Rating (1 - 5)</label>
+                    <label for="hobby-rating">Nilai</label>
                     <select id="hobby-rating" class="form-input">
-                        <option value="5">★★★★★ (Masterpiece)</option>
-                        <option value="4">★★★★☆ (Great)</option>
-                        <option value="3">★★★☆☆ (Good)</option>
-                        <option value="2">★★☆☆☆ (Meh)</option>
-                        <option value="1">★☆☆☆☆ (Terrible)</option>
+                        <option value="5">★★★★★ Juara</option>
+                        <option value="4">★★★★☆ Bagus banget</option>
+                        <option value="3">★★★☆☆ Oke</option>
+                        <option value="2">★★☆☆☆ Biasa aja</option>
+                        <option value="1">★☆☆☆☆ Nyesel</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Review / Notes</label>
-                    <textarea id="hobby-review" class="form-input" rows="3" placeholder="Tulis review singkat lu disini..."></textarea>
+                    <label for="hobby-review">Review singkat</label>
+                    <textarea id="hobby-review" class="form-input" rows="3" placeholder="Tulis kesan lu di sini"></textarea>
                 </div>
             </div>
 
-            <div class="modal-actions" style="justify-content: space-between;">
-                <button class="btn-cancel" id="btn-delete-hobby" style="display:none; color: var(--sakura-pink); border-color: var(--sakura-pink);" onclick="triggerDeleteHobby()">Delete</button>
-                <div style="display: flex; gap: 10px; margin-left: auto;">
-                    <button class="btn-cancel" onclick="closeModal('hobbyModal')">Cancel</button>
-                    <button class="btn-submit" onclick="saveHobby()">Save Entry</button>
+            <div class="modal-actions split">
+                <button type="button" class="btn-cancel danger" id="btn-delete-hobby" hidden onclick="triggerDeleteHobby()">Hapus</button>
+                <div class="group">
+                    <button type="button" class="btn-cancel" onclick="closeModal('hobbyModal')">Batal</button>
+                    <button type="button" class="btn-submit" id="btn-save-hobby" onclick="saveHobby()">Simpan</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
-        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
-            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
-            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
-            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus ini?</p>
-            <div style="display: flex; justify-content: center; gap: 12px;">
-                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
-                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
-            </div>
-        </div>
-    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // 1. INIT SUPABASE (Udah Bener & Dipindah ke bawah)
-        const supabaseUrl = 'https://pbvjxiyijesakcnywgdv.supabase.co';
-        const supabaseKey = 'sb_publishable_2yVPX7xdB2PnDNR3Pi4R-A_acaqtDH3';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Setup Data Local Storage
-        let hobbies = JSON.parse(localStorage.getItem('finzen_hobbies')) || [];
-        let activeEditId = null;
-
-        // Config UI
-        const typeConfig = {
-            'Anime': { color: '#D98C8C', bg: 'rgba(217,140,140,0.15)', icon: '🌸' },
-            'Movie': { color: '#7B9095', bg: 'rgba(123,144,149,0.15)', icon: '🎬' },
-            'Series': { color: '#8F9779', bg: 'rgba(143,151,121,0.15)', icon: '📺' },
-            'Game': { color: '#6B7280', bg: 'rgba(107,114,128,0.15)', icon: '🎮' }
-        };
-
-        function getStars(num) {
-            return '★'.repeat(num) + '☆'.repeat(5 - num);
-        }
-
-        // --- RENDER UI ---
-        function renderHobbies() {
-            const watchContainer = document.getElementById('watchlist-container');
-            const rateContainer = document.getElementById('ratings-container');
-            watchContainer.innerHTML = '';
-            rateContainer.innerHTML = '';
-
-            const watchlist = hobbies.filter(h => h.status === 'Plan to Watch');
-            const ratedList = hobbies.filter(h => h.status === 'Completed');
-
-            // 1. Render Watchlist (List Kecil Kiri)
-            if (watchlist.length === 0) {
-                watchContainer.innerHTML = '<div class="empty-state" style="padding: 20px 0;">Kosong nih. Tambahin list baru!</div>';
-            } else {
-                watchlist.forEach(item => {
-                    const cfg = typeConfig[item.type];
-                    watchContainer.innerHTML += `
-                        <div class="watchlist-item" onclick="openEditModal(${item.id})">
-                            <div>
-                                <span class="type-badge" style="background:${cfg.bg}; color:${cfg.color};">${item.type}</span>
-                                <p style="font-weight: 600; font-size: 14px;">${item.title}</p>
-                            </div>
-                            <div style="font-size: 18px;">${cfg.icon}</div>
-                        </div>
-                    `;
-                });
-            }
-
-            // 2. Render Rated Cards (Letterboxd style Kanan)
-            if (ratedList.length === 0) {
-                rateContainer.innerHTML = '<div class="empty-state">Belum ada review. Selesain satu terus kasih rating!</div>';
-            } else {
-                // Sort dari rating tertinggi
-                ratedList.sort((a,b) => b.rating - a.rating);
-                
-                ratedList.forEach(item => {
-                    const cfg = typeConfig[item.type];
-                    rateContainer.innerHTML += `
-                        <div class="rating-card" onclick="openEditModal(${item.id})">
-                            <div class="card-cover" style="background: ${cfg.bg}; border-bottom: 1px solid var(--border-color);">
-                                ${cfg.icon}
-                            </div>
-                            <div class="card-body">
-                                <h4 style="font-size: 15px; color: var(--text-dark);">${item.title}</h4>
-                                <div class="stars">${getStars(item.rating)}</div>
-                                <p class="review-text">"${item.review || 'No review written.'}"</p>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-        }
-                // --- SISTEM GEMBOK LOGIN ---
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html'; // Usir ke halaman login
-            }
-        }
-// --- FUNGSI NARIK DATA DARI CLOUD ---
-        async function fetchCloudData() {
-            // 1. Ambil data wallets dari Supabase
-            const { data: dbWallets } = await supabaseClient.from('wallets').select('*');
-            if (dbWallets && dbWallets.length > 0) {
-                wallets = dbWallets;
-                localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
-            }
-
-            // 2. Ambil data transactions dari Supabase
-            const { data: dbTx } = await supabaseClient.from('transactions').select('*');
-            if (dbTx) {
-                transactions = dbTx;
-                localStorage.setItem('finzen_tx', JSON.stringify(transactions));
-            }
-
-            // 3. Render layarnya
-            updateDashboard();
-        }
-
-        // --- SISTEM GEMBOK LOGIN ---
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html';
-            } else {
-                // KALAU SUDAH LOGIN, TARIK DATA DARI CLOUD!
-                fetchCloudData();
-            }
-        }
-
-        // Jalankan pas halaman dibuka
-        window.onload = () => { 
-            document.getElementById('filter-month').value = new Date().getMonth();
-            checkAuth(); 
-        };
-        async function logout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'login.html';
-        }
-
-        // Panggil checkAuth pas halaman dibuka
-        checkAuth();
-        // --- FORM & MODAL LOGIC ---
-        function toggleRatingArea() {
-            const status = document.getElementById('hobby-status').value;
-            const area = document.getElementById('rating-area');
-            if(status === 'Completed') {
-                area.style.display = 'block';
-            } else {
-                area.style.display = 'none';
-            }
-        }
-
-        function openAddModal() {
-            activeEditId = null;
-            document.getElementById('modal-title').innerText = "Add New Entry";
-            document.getElementById('hobby-title').value = '';
-            document.getElementById('hobby-type').value = 'Anime';
-            document.getElementById('hobby-status').value = 'Plan to Watch';
-            document.getElementById('hobby-rating').value = '5';
-            document.getElementById('hobby-review').value = '';
-            document.getElementById('btn-delete-hobby').style.display = 'none';
-            toggleRatingArea();
-            openModal('hobbyModal');
-        }
-
-        function openEditModal(id) {
-            const item = hobbies.find(h => h.id === id);
-            if(!item) return;
-
-            activeEditId = id;
-            document.getElementById('modal-title').innerText = "Edit Entry";
-            document.getElementById('hobby-title').value = item.title;
-            document.getElementById('hobby-type').value = item.type;
-            document.getElementById('hobby-status').value = item.status;
-            document.getElementById('hobby-rating').value = item.rating || '5';
-            document.getElementById('hobby-review').value = item.review || '';
-            document.getElementById('btn-delete-hobby').style.display = 'block';
-            toggleRatingArea();
-            openModal('hobbyModal');
-        }
-
-        async function saveHobby() {
-            const title = document.getElementById('hobby-title').value;
-            const type = document.getElementById('hobby-type').value;
-            const status = document.getElementById('hobby-status').value;
-            const rating = parseInt(document.getElementById('hobby-rating').value);
-            const review = document.getElementById('hobby-review').value;
-
-            if(!title) { alert("Judulnya jangan dikosongin cuy!"); return; }
-
-            const payload = { title, type, status, rating, review };
-
-            if(activeEditId) {
-                // Update Lokal (biar gampang di UI lu)
-                const idx = hobbies.findIndex(h => h.id === activeEditId);
-                hobbies[idx] = { ...hobbies[idx], ...payload };
-            } else {
-                // Bikin baru dan lempar ke Supabase
-                const { error } = await supabaseClient
-                    .from('hobbies')
-                    .insert([payload]);
-
-                if (error) {
-                    console.error("Error dari Supabase:", error);
-                    alert("Gagal simpan hobby ke database cloud! Cek console F12.");
-                    return; // Berhenti kalau error
-                }
-                
-                payload.id = Date.now();
-                hobbies.push(payload);
-            }
-
-            localStorage.setItem('finzen_hobbies', JSON.stringify(hobbies));
-            closeModal('hobbyModal');
-            renderHobbies();
-        }
-
-        // --- DELETE LOGIC (Pakai Custom Confirm) ---
-        let confirmAction = null; 
-        
-        function customConfirm(message, actionCallback) {
-            document.getElementById('confirm-msg').innerText = message;
-            confirmAction = actionCallback; 
-            document.getElementById('confirmModal').style.display = 'flex';
-        }
-
-        function executeConfirm() {
-            if(confirmAction) {
-                confirmAction(); 
-                confirmAction = null;
-            }
-            closeModal('confirmModal');
-        }
-
-        function triggerDeleteHobby() {
-            customConfirm(`Yakin mau menghapus ini dari list?`, () => {
-                hobbies = hobbies.filter(h => h.id !== activeEditId);
-                localStorage.setItem('finzen_hobbies', JSON.stringify(hobbies));
-                closeModal('hobbyModal');
-                renderHobbies();
-            });
-        }
-
-        // --- BASE MODAL CONTROLS ---
-        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-        window.onclick = function(event) { 
-            if (event.target.classList.contains('modal-overlay')) { 
-                event.target.style.display = "none"; 
-            } 
-        }
-
-        // Initial Render
-        window.onload = () => { renderHobbies(); };
-    </script>
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/hobbies.js"></script>
 </body>
 </html>

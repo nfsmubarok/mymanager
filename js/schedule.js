@@ -1,253 +1,302 @@
-let nav = 0; 
+let nav = 0;
 let editingScheduleId = null;
-let selectedDateForNew = null; 
-let schedules = JSON.parse(localStorage.getItem('finzen_schedules')) || [];
-let tasks = JSON.parse(localStorage.getItem('finzen_tasks')) || [];
+let selectedDateForNew = null;
+let schedules = [];
+let tasks = [];
+let scheduleLoaded = false;
 
-const priorityColors = {
-    'High': { hex: '#D98C8C', class: 'tag-high' },
-    'Medium': { hex: '#7B9095', class: 'tag-medium' },
-    'Low': { hex: '#8F9779', class: 'tag-low' }
-};
+const priorityLabels = { High: 'Tinggi', Medium: 'Sedang', Low: 'Rendah' };
+function prio(p) { return priorityLabels[p] ? p : 'Medium'; }
 
-// Helper potong detik paling ampuh
+// "12:20:00" jadi "12:20"
 function formatTime(t) {
-    if(!t) return '';
-    return t.split(':').slice(0, 2).join(':'); // Misal "12:20:00" -> dipisah jadi ["12", "20"] -> digabung jadi "12:20"
+    if (!t) return '';
+    return String(t).split(':').slice(0, 2).join(':');
 }
 
-// --- FUNGSI TARIK DATA (USER LOGIN ONLY) ---
+function toDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// --- TARIK DATA (KHUSUS USER LOGIN) ---
 async function fetchCloudSchedule() {
+    showLoading('upcoming-list');
+    showLoading('task-list');
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
 
-        const { data: dbSch } = await supabaseClient.from('schedules').select('*').eq('user_id', user.id);
-        if (dbSch) {
-            schedules = dbSch;
-            localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
-        }
+        const [schRes, taskRes] = await Promise.all([
+            supabaseClient.from('schedules').select('*').eq('user_id', user.id),
+            supabaseClient.from('tasks').select('*').eq('user_id', user.id)
+        ]);
+        if (schRes.error) throw schRes.error;
+        if (taskRes.error) throw taskRes.error;
 
-        const { data: dbTasks } = await supabaseClient.from('tasks').select('*').eq('user_id', user.id);
-        if (dbTasks) {
-            tasks = dbTasks;
-            localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
-        }
-
-        loadCalendar(); 
-        renderUpcoming(); 
-        renderTasks();
+        schedules = schRes.data || [];
+        tasks = taskRes.data || [];
+        scheduleLoaded = true;
+        renderAll();
     } catch (err) {
-        console.error("Fetch Schedule Error:", err);
+        console.error('Fetch schedule error:', err);
+        const msg = 'Jadwal ga kebaca. Cek koneksi lu, terus coba lagi.';
+        showError('upcoming-list', msg, fetchCloudSchedule);
+        showError('task-list', msg, fetchCloudSchedule);
     }
 }
 
-// --- CALENDAR LOGIC ---
-window.loadCalendar = function() {
+function renderAll() { loadCalendar(); renderUpcoming(); renderTasks(); }
+
+// --- KALENDER ---
+function loadCalendar() {
     const calendarDays = document.getElementById('calendar-days');
     const monthDisplay = document.getElementById('month-display');
     const dt = new Date();
-    if (nav !== 0) { dt.setMonth(new Date().getMonth() + nav); }
-    
-    const day = dt.getDate();
+    dt.setDate(1);
+    dt.setMonth(dt.getMonth() + nav);
+
     const month = dt.getMonth();
     const year = dt.getFullYear();
-    monthDisplay.innerText = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    monthDisplay.textContent = dt.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 
-    const firstDayOfMonth = new Date(year, month, 1);
+    const paddingDays = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const dateString = firstDayOfMonth.toLocaleDateString('en-US', { weekday: 'short' });
-    const paddingDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(dateString);
+    const todayStr = toDateStr(new Date());
 
     calendarDays.innerHTML = '';
-    for (let i = 1; i <= paddingDays + daysInMonth; i++) {
-        const daySquare = document.createElement('div');
-        daySquare.classList.add('day-cell');
-        if (i > paddingDays) {
-            const currentDay = i - paddingDays;
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
-            
-            daySquare.innerHTML = `<div class="day-number">${currentDay}</div>`;
-            daySquare.onclick = () => openDailyModal(dateStr);
+    for (let i = 0; i < paddingDays; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'day-cell muted';
+        empty.setAttribute('aria-hidden', 'true');
+        calendarDays.appendChild(empty);
+    }
 
-            const todayDate = new Date();
-            if (currentDay === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear()) {
-                daySquare.classList.add('today');
-            }
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = toDateStr(new Date(year, month, day));
+        const dayEvents = schedules.filter(sch => sch.date === dateStr);
 
-            schedules.filter(sch => sch.date === dateStr).forEach(event => {
-                const eventDiv = document.createElement('div');
-                eventDiv.classList.add('event-pill');
-                eventDiv.style.backgroundColor = priorityColors[event.priority].hex;
-                // Pakai fungsi formatTime biar bersih
-                eventDiv.innerText = `${formatTime(event.time)} ${event.title}`;
-                daySquare.appendChild(eventDiv);
-            });
-        } else {
-            daySquare.classList.add('muted');
-        }
-        calendarDays.appendChild(daySquare);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'day-cell' + (dateStr === todayStr ? ' today' : '');
+        const readable = new Date(year, month, day).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+        cell.setAttribute('aria-label', `${readable}, ${dayEvents.length ? dayEvents.length + ' jadwal' : 'kosong'}`);
+        if (dateStr === todayStr) cell.setAttribute('aria-current', 'date');
+        cell.addEventListener('click', () => openDailyModal(dateStr));
+
+        const num = document.createElement('span');
+        num.className = 'day-number';
+        num.textContent = day;
+        cell.appendChild(num);
+
+        dayEvents.forEach(event => {
+            const pill = document.createElement('span');
+            pill.className = 'event-pill prio-' + prio(event.priority);
+            pill.textContent = `${formatTime(event.time)} ${event.title}`;
+            pill.setAttribute('aria-hidden', 'true');
+            cell.appendChild(pill);
+        });
+        calendarDays.appendChild(cell);
     }
 }
 
-window.changeMonth = function(direction) { nav += direction; loadCalendar(); }
+function changeMonth(direction) { nav += direction; loadCalendar(); }
 
-window.openDailyModal = function(dateStr) {
-    document.getElementById('daily-modal-title').innerText = `Schedule: ${dateStr}`;
+function openDailyModal(dateStr) {
+    const readable = new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('daily-modal-title').textContent = readable;
     selectedDateForNew = dateStr;
     const listDiv = document.getElementById('daily-schedule-list');
-    listDiv.innerHTML = '';
-    
-    let dayEvents = schedules.filter(sch => sch.date === dateStr).sort((a,b) => a.time.localeCompare(b.time));
-    if(dayEvents.length === 0) { listDiv.innerHTML = '<div class="empty-state">Kosong nih, gaada jadwal.</div>'; } 
-    else {
-        dayEvents.forEach(event => {
-            const pColor = priorityColors[event.priority].hex;
-            listDiv.innerHTML += `
-                <div style="border-left: 3px solid ${pColor}; padding: 12px; background: #fafaf9; border-radius: 0 8px 8px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><p style="font-weight: 600; font-size: 14px; color: var(--text-dark);">${formatTime(event.time)} - ${event.title}</p></div>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="editSchedule('${event.id}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">✏️</button>
-                        <button onclick="deleteSchedule('${event.id}', '${dateStr}')" style="background:none; border:1px solid var(--border-color); border-radius: 4px; padding: 4px; cursor:pointer;">🗑️</button>
-                    </div>
-                </div>`;
-        });
+
+    const dayEvents = schedules.filter(sch => sch.date === dateStr).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+    if (dayEvents.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state">Kosong nih, belum ada jadwal.</div>';
+    } else {
+        listDiv.innerHTML = dayEvents.map(event => `
+            <div class="schedule-item p-${prio(event.priority)}">
+                <div>
+                    <p class="schedule-title">${esc(formatTime(event.time))} ${esc(event.title)}</p>
+                    <p class="schedule-meta">Prioritas ${priorityLabels[prio(event.priority)].toLowerCase()}</p>
+                </div>
+                <div class="tx-actions">
+                    <button type="button" class="btn-text" onclick="editSchedule('${esc(event.id)}')" aria-label="Edit ${esc(event.title)}">Edit</button>
+                    <button type="button" class="btn-text danger" onclick="deleteSchedule('${esc(event.id)}')" aria-label="Hapus ${esc(event.title)}">Hapus</button>
+                </div>
+            </div>`).join('');
     }
-    document.getElementById('dailyModal').style.display = 'flex';
+    if (!document.getElementById('dailyModal').classList.contains('open')) openModal('dailyModal');
 }
 
-window.renderUpcoming = function() {
+function renderUpcoming() {
     const listDiv = document.getElementById('upcoming-list');
-    listDiv.innerHTML = '';
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    let todayEvents = schedules.filter(sch => sch.date === todayStr).sort((a, b) => a.time.localeCompare(b.time));
+    clearBusy(listDiv);
+    const todayStr = toDateStr(new Date());
+    const todayEvents = schedules.filter(sch => sch.date === todayStr).sort((a, b) => String(a.time).localeCompare(String(b.time)));
 
-    if (todayEvents.length === 0) { listDiv.innerHTML = '<div class="empty-state">No schedule for today. Relax! 🍵</div>'; } 
-    else {
-        todayEvents.forEach(event => {
-            const pColor = priorityColors[event.priority].hex;
-            listDiv.innerHTML += `<div class="schedule-item" style="border-color: ${pColor};"><div style="display: flex; justify-content: space-between;"><div><p style="font-weight: 700; font-size: 14px;">${event.title}</p><p style="font-size: 12px; color: ${pColor};">${event.priority} Priority • ${formatTime(event.time)}</p></div></div></div>`;
-        });
+    if (todayEvents.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state">Hari ini kosong. Santai dulu sambil ngeteh.</div>';
+        return;
     }
+    listDiv.innerHTML = todayEvents.map(event => `
+        <div class="schedule-item p-${prio(event.priority)}">
+            <div>
+                <p class="schedule-title">${esc(event.title)}</p>
+                <p class="schedule-meta">${esc(formatTime(event.time))} · prioritas ${priorityLabels[prio(event.priority)].toLowerCase()}</p>
+            </div>
+        </div>`).join('');
 }
 
-window.renderTasks = function() {
+function renderTasks() {
     const listDiv = document.getElementById('task-list');
-    listDiv.innerHTML = '';
-    if (tasks.length === 0) { listDiv.innerHTML = '<div class="empty-state">No tasks pending.</div>'; return; }
+    clearBusy(listDiv);
+    if (tasks.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state">Ga ada tugas yang nunggu.</div>';
+        return;
+    }
     tasks.sort((a, b) => {
-        if(a.completed === b.completed) return new Date(a.deadline) - new Date(b.deadline);
+        if (a.completed === b.completed) return new Date(a.deadline) - new Date(b.deadline);
         return a.completed ? 1 : -1;
     });
 
-    tasks.forEach(task => {
-        const checkedStr = task.completed ? 'checked' : '';
-        const itemClass = task.completed ? 'task-item completed' : 'task-item';
-        listDiv.innerHTML += `<div class="${itemClass}"><input type="checkbox" class="task-checkbox" ${checkedStr} onchange="toggleTask('${task.id}')"><div class="task-content"><div style="display:flex; justify-content:space-between;"><p class="task-title">${task.name}</p></div><div style="display:flex; justify-content:space-between; align-items:center;"><p style="font-size: 11px;">Deadline: ${task.deadline}</p><button onclick="deleteTask('${task.id}')" style="background:none; border:none; cursor:pointer;">🗑️</button></div></div></div>`;
-    });
+    listDiv.innerHTML = tasks.map(task => {
+        const id = esc(task.id);
+        const p = prio(task.priority);
+        return `
+        <div class="task-item${task.completed ? ' completed' : ''}">
+            <input type="checkbox" id="task-${id}" ${task.completed ? 'checked' : ''} onchange="toggleTask('${id}')">
+            <div class="task-content">
+                <label class="task-title" for="task-${id}">${esc(task.name)}</label>
+                <div class="task-foot">
+                    <span>Deadline ${formatDate(task.deadline)} · <span class="priority-tag tag-${p}">${priorityLabels[p]}</span></span>
+                    <button type="button" class="btn-text danger" onclick="deleteTask('${id}')" aria-label="Hapus tugas ${esc(task.name)}">Hapus</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
-window.openAddFromDaily = function() { closeModal('dailyModal'); openModal('scheduleModal'); if(selectedDateForNew) { document.getElementById('sch-date').value = selectedDateForNew; } }
-
-window.editSchedule = function(id) {
-    let sch = schedules.find(s => s.id == id);
-    if(sch) {
-        editingScheduleId = id; 
-        document.getElementById('schedule-modal-title').innerText = "Edit Schedule";
-        document.getElementById('sch-title').value = sch.title; 
-        document.getElementById('sch-date').value = sch.date;
-        document.getElementById('sch-time').value = formatTime(sch.time); 
-        document.getElementById('sch-priority').value = sch.priority;
-        closeModal('dailyModal'); document.getElementById('scheduleModal').style.display = 'flex';
-    }
+function openAddFromDaily() {
+    closeModal('dailyModal');
+    openModal('scheduleModal');
+    if (selectedDateForNew) document.getElementById('sch-date').value = selectedDateForNew;
 }
 
-// --- CLOUD SAVE / DELETE ACTIONS ---
-window.saveSchedule = async function() {
-    const title = document.getElementById('sch-title').value;
+function editSchedule(id) {
+    const sch = schedules.find(s => s.id == id);
+    if (!sch) return;
+    closeModal('dailyModal');
+    editingScheduleId = sch.id;
+    openModal('scheduleModal');
+    document.getElementById('schedule-modal-title').textContent = 'Edit jadwal';
+    document.getElementById('sch-title').value = sch.title;
+    document.getElementById('sch-date').value = sch.date;
+    document.getElementById('sch-time').value = formatTime(sch.time);
+    document.getElementById('sch-priority').value = prio(sch.priority);
+}
+
+// --- SIMPAN / HAPUS ---
+async function saveSchedule() {
+    const title = document.getElementById('sch-title').value.trim();
     const date = document.getElementById('sch-date').value;
     const time = document.getElementById('sch-time').value;
     const priority = document.getElementById('sch-priority').value;
 
-    if(!title || !date || !time) return alert("Isi lengkap datanya!");
+    if (!title || !date || !time) { showToast('Nama, tanggal, dan jam wajib diisi.', true); return; }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const btn = document.getElementById('btn-save-schedule');
+    btn.disabled = true;
+    const user = await getCurrentUser();
     const payload = { title, date, time, priority, user_id: user ? user.id : null };
 
-    if(editingScheduleId) {
-        const { error } = await supabaseClient.from('schedules').update(payload).eq('id', editingScheduleId);
-        if (error) return alert("Gagal update schedule!");
-        editingScheduleId = null; 
-    } else {
-        const { data: dbData, error } = await supabaseClient.from('schedules').insert([payload]).select();
-        if (error) return alert("Gagal simpan schedule!");
-        if (dbData && dbData.length > 0) schedules.push(dbData[0]);
-    }
-    
-    localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
-    closeModal('scheduleModal'); 
+    const { error } = editingScheduleId
+        ? await supabaseClient.from('schedules').update(payload).eq('id', editingScheduleId)
+        : await supabaseClient.from('schedules').insert([payload]).select();
+    btn.disabled = false;
+
+    if (error) { showToast('Gagal nyimpen jadwal.', true); return; }
+    showToast('Jadwal tersimpan.');
+    closeModal('scheduleModal');
     fetchCloudSchedule();
 }
 
-window.deleteSchedule = function(id, dateStr = null) {
-    if(confirm('Yakin mau hapus?')) {
-        supabaseClient.from('schedules').delete().eq('id', id).then(({error}) => {
-            if (error) return alert("Gagal hapus dari cloud!");
-            schedules = schedules.filter(s => s.id != id);
-            localStorage.setItem('finzen_schedules', JSON.stringify(schedules));
-            loadCalendar(); renderUpcoming(); if(dateStr) openDailyModal(dateStr);
-        });
-    }
+function deleteSchedule(id) {
+    const sch = schedules.find(s => s.id == id);
+    customConfirm('Yakin mau hapus jadwal ini?', async () => {
+        const { error } = await supabaseClient.from('schedules').delete().eq('id', id);
+        if (error) { showToast('Gagal hapus jadwal.', true); return; }
+        schedules = schedules.filter(s => s.id != id);
+        showToast('Jadwal dihapus.');
+        renderAll();
+        if (sch && document.getElementById('dailyModal').classList.contains('open')) openDailyModal(sch.date);
+    });
 }
 
-window.saveTask = async function() {
-    const name = document.getElementById('task-name').value;
+async function saveTask() {
+    const name = document.getElementById('task-name').value.trim();
     const deadline = document.getElementById('task-deadline').value;
     const priority = document.getElementById('task-priority').value;
 
-    if(!name || !deadline) return alert("Nama task dan deadline harus diisi!");
+    if (!name || !deadline) { showToast('Nama tugas dan deadline wajib diisi.', true); return; }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const btn = document.getElementById('btn-save-task');
+    btn.disabled = true;
+    const user = await getCurrentUser();
     const payload = { name, deadline, priority, completed: false, user_id: user ? user.id : null };
+    const { data, error } = await supabaseClient.from('tasks').insert([payload]).select();
+    btn.disabled = false;
 
-    const { data: dbData, error } = await supabaseClient.from('tasks').insert([payload]).select();
-    if (error) return alert("Gagal simpan task!");
-    if (dbData && dbData.length > 0) tasks.push(dbData[0]);
-
-    localStorage.setItem('finzen_tasks', JSON.stringify(tasks));
-    closeModal('taskModal'); 
+    if (error) { showToast('Gagal nyimpen tugas.', true); return; }
+    if (data && data.length > 0) tasks.push(data[0]);
+    showToast('Tugas ditambahin.');
+    closeModal('taskModal');
     renderTasks();
 }
 
-window.toggleTask = async function(id) { 
-    let task = tasks.find(t => t.id == id); 
-    if(task) { 
-        task.completed = !task.completed; 
-        await supabaseClient.from('tasks').update({ completed: task.completed }).eq('id', id);
-        localStorage.setItem('finzen_tasks', JSON.stringify(tasks)); 
-        renderTasks(); 
-    } 
-}
-
-window.deleteTask = async function(id) { 
-    const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
-    if (error) return alert("Gagal hapus task!");
-    tasks = tasks.filter(t => t.id != id); 
-    localStorage.setItem('finzen_tasks', JSON.stringify(tasks)); 
-    renderTasks(); 
-}
-
-// UI UTILS
-window.openModal = function(modalId) { 
-    if(modalId === 'scheduleModal' && !editingScheduleId) {
-        document.getElementById('schedule-modal-title').innerText = "Add Schedule";
-        document.getElementById('sch-title').value = ''; document.getElementById('sch-date').valueAsDate = new Date(); document.getElementById('sch-time').value = '';
+async function toggleTask(id) {
+    const task = tasks.find(t => t.id == id);
+    if (!task) return;
+    task.completed = !task.completed;
+    const { error } = await supabaseClient.from('tasks').update({ completed: task.completed }).eq('id', task.id);
+    if (error) {
+        task.completed = !task.completed;
+        showToast('Gagal update tugas.', true);
     }
-    if(modalId === 'taskModal') { document.getElementById('task-name').value = ''; document.getElementById('task-deadline').valueAsDate = new Date(); }
-    document.getElementById(modalId).style.display = 'flex'; 
+    renderTasks();
+    const cb = document.getElementById('task-' + task.id);
+    if (cb) cb.focus();
 }
-window.closeModal = function(modalId) { document.getElementById(modalId).style.display = 'none'; if(modalId === 'scheduleModal') editingScheduleId = null; }
-window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) { event.target.style.display = "none"; editingScheduleId = null; } }
 
-window.onload = () => { if(typeof checkAuth === 'function') checkAuth(); fetchCloudSchedule(); };
+function deleteTask(id) {
+    customConfirm('Yakin mau hapus tugas ini?', async () => {
+        const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
+        if (error) { showToast('Gagal hapus tugas.', true); return; }
+        tasks = tasks.filter(t => t.id != id);
+        showToast('Tugas dihapus.');
+        renderTasks();
+    });
+}
+
+// --- RESET FORM ---
+window.onModalOpen = function(modalId) {
+    if (modalId === 'scheduleModal' && !editingScheduleId) {
+        document.getElementById('schedule-modal-title').textContent = 'Tambah jadwal';
+        document.getElementById('sch-title').value = '';
+        document.getElementById('sch-date').value = localDateStr();
+        document.getElementById('sch-time').value = '';
+        document.getElementById('sch-priority').value = 'Medium';
+    }
+    if (modalId === 'taskModal') {
+        document.getElementById('task-name').value = '';
+        document.getElementById('task-deadline').value = localDateStr();
+        document.getElementById('task-priority').value = 'Medium';
+    }
+};
+window.onModalClose = function(modalId) {
+    if (modalId === 'scheduleModal') editingScheduleId = null;
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    loadCalendar();
+    showLoading('upcoming-list');
+    showLoading('task-list');
+    if (await requireAuth()) fetchCloudSchedule();
+});
