@@ -1,163 +1,157 @@
 // --- STATE GLOBAL ---
-var wallets = JSON.parse(localStorage.getItem('finzen_wallets')) || [];
-var transactions = JSON.parse(localStorage.getItem('finzen_tx')) || [];
+var wallets = [];
+var transactions = [];
 var editingTxId = null;
 var editingTransferId = null;
 
-// --- FUNGSI FETCH CLOUD (KHUSUS USER LOGIN) ---
+// --- TARIK DATA (KHUSUS USER LOGIN) ---
 async function fetchCloudData() {
+    showDashboardLoading();
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
 
-        const { data: dbWallets, error: errW } = await supabaseClient.from('wallets').select('*').eq('user_id', user.id);
-        if (dbWallets) {
-            wallets = dbWallets.map(w => ({
-                id: w.id,
-                name: w.name || w.nama || 'Wallet', 
-                balance: parseInt(w.balance) || 0,
-                user_id: w.user_id
-            }));
-            localStorage.setItem('finzen_wallets', JSON.stringify(wallets));
-        }
+        const [walletRes, txRes] = await Promise.all([
+            supabaseClient.from('wallets').select('*').eq('user_id', user.id),
+            supabaseClient.from('transactions').select('*').eq('user_id', user.id)
+        ]);
+        if (walletRes.error) throw walletRes.error;
+        if (txRes.error) throw txRes.error;
 
-        const { data: dbTx, error: errT } = await supabaseClient.from('transactions').select('*').eq('user_id', user.id);
-        if (dbTx) {
-            transactions = dbTx.map(t => ({
-                id: t.id,
-                type: t.type,
-                desc: t.description || t.desc || '',
-                amount: parseInt(t.amount) || 0,
-                date: t.date,
-                category: t.category,
-                walletId: t.wallet_id,
-                to_wallet_id: t.to_wallet_id,
-                note: t.note || ''
-            }));
-            localStorage.setItem('finzen_tx', JSON.stringify(transactions));
-        }
+        wallets = (walletRes.data || []).map(w => ({
+            id: w.id,
+            name: w.name || w.nama || 'Dompet',
+            balance: parseInt(w.balance) || 0,
+            user_id: w.user_id
+        }));
+        transactions = (txRes.data || []).map(t => ({
+            id: t.id,
+            type: t.type,
+            desc: t.description || t.desc || '',
+            amount: parseInt(t.amount) || 0,
+            date: t.date,
+            category: t.category,
+            walletId: t.wallet_id,
+            to_wallet_id: t.to_wallet_id,
+            note: t.note || ''
+        }));
 
-        if (typeof updateDashboard === 'function') updateDashboard();
+        updateDashboard();
     } catch (err) {
-        console.error("Fetch Error:", err);
+        console.error('Fetch error:', err);
+        showDashboardError();
     }
 }
 
-// --- FUNGSI SAVE & DELETE TRANSAKSI ---
-window.saveTransaction = async function() {
-    let typeEl = document.querySelector('input[name="tx-type"]:checked');
-    let type = typeEl ? typeEl.value : 'expense';
-    let desc = document.getElementById('tx-desc').value;
-    let amount = parseInt(document.getElementById('tx-amount').value);
-    let date = document.getElementById('tx-date').value;
-    let category = document.getElementById('tx-category').value;
-    let walletId = document.getElementById('tx-wallet').value;
-    let note = document.getElementById('tx-note').value;
+function setSaving(btnId, saving, label) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.disabled = saving;
+    btn.textContent = saving ? 'Menyimpan...' : label;
+}
 
-    if(!desc || isNaN(amount) || !date) { showToast("Tolong isi Description, Amount, dan Date!", true); return; }
+// --- SIMPAN & HAPUS TRANSAKSI ---
+async function saveTransaction() {
+    const typeEl = document.querySelector('input[name="tx-type"]:checked');
+    const type = typeEl ? typeEl.value : 'expense';
+    const desc = document.getElementById('tx-desc').value.trim();
+    const amount = parseInt(document.getElementById('tx-amount').value);
+    const date = document.getElementById('tx-date').value;
+    const category = document.getElementById('tx-category').value;
+    const walletId = document.getElementById('tx-wallet').value;
+    const note = document.getElementById('tx-note').value.trim();
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    let payload = { type, description: desc, amount, date, category, wallet_id: walletId, note, user_id: user ? user.id : null };
+    if (!desc || isNaN(amount) || !date) { showToast('Keterangan, jumlah, dan tanggal wajib diisi.', true); return; }
+    if (!walletId) { showToast('Bikin dompet dulu sebelum nyatet transaksi.', true); return; }
 
-    if(editingTxId) {
-        const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTxId);
-        if (error) { showToast("Gagal update cloud!", true); return; }
-        showToast("Transaksi berhasil diupdate!");
-    } else {
-        const { error } = await supabaseClient.from('transactions').insert([payload]);
-        if (error) { showToast("Gagal simpan ke cloud!", true); return; }
-        showToast("Transaksi tersimpan!");
-    }
+    setSaving('btn-save-tx', true, 'Simpan');
+    const user = await getCurrentUser();
+    const payload = { type, description: desc, amount, date, category, wallet_id: walletId, note, user_id: user ? user.id : null };
 
-    editingTxId = null;
+    const { error } = editingTxId
+        ? await supabaseClient.from('transactions').update(payload).eq('id', editingTxId)
+        : await supabaseClient.from('transactions').insert([payload]);
+    setSaving('btn-save-tx', false, 'Simpan');
+
+    if (error) { showToast(editingTxId ? 'Gagal update transaksi.' : 'Gagal nyimpen transaksi.', true); return; }
+    showToast(editingTxId ? 'Transaksi udah diupdate.' : 'Transaksi tersimpan.');
+
     closeModal('transactionModal');
     fetchCloudData();
 }
 
-window.triggerDeleteTx = function(id) {
-    customConfirm(`Yakin mau menghapus transaksi ini?`, async () => {
+function triggerDeleteTx(id) {
+    customConfirm('Yakin mau hapus transaksi ini?', async () => {
         const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
-        if (error) { showToast("Gagal hapus dari cloud!", true); return; }
-        showToast("Transaksi berhasil dihapus!");
+        if (error) { showToast('Gagal hapus transaksi.', true); return; }
+        showToast('Transaksi dihapus.');
         fetchCloudData();
     });
 }
 
-window.saveTransfer = async function() {
-    let fromId = document.getElementById('transfer-from').value;
-    let toId = document.getElementById('transfer-to').value;
-    let amount = parseInt(document.getElementById('transfer-amount').value);
-    let date = document.getElementById('transfer-date').value;
-    let note = document.getElementById('transfer-note').value;
+async function saveTransfer() {
+    const fromId = document.getElementById('transfer-from').value;
+    const toId = document.getElementById('transfer-to').value;
+    const amount = parseInt(document.getElementById('transfer-amount').value);
+    const date = document.getElementById('transfer-date').value;
+    const note = document.getElementById('transfer-note').value.trim();
 
-    if(fromId === toId) { showToast("Masa transfer ke dompet yang sama wkwk", true); return; }
-    if(isNaN(amount) || !date) { showToast("Isi jumlah dan tanggalnya cuy!", true); return; }
+    if (!fromId || !toId) { showToast('Butuh minimal dua dompet buat transfer.', true); return; }
+    if (fromId === toId) { showToast('Masa transfer ke dompet yang sama, wkwk.', true); return; }
+    if (isNaN(amount) || !date) { showToast('Isi jumlah dan tanggalnya dulu.', true); return; }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    let payload = { 
-        type: 'transfer', description: `Transfer`, amount: amount, date: date, 
-        category: 'Transfer', wallet_id: fromId, to_wallet_id: toId, note: note,
+    setSaving('btn-save-transfer', true, 'Simpan transfer');
+    const user = await getCurrentUser();
+    const payload = {
+        type: 'transfer', description: 'Transfer', amount, date,
+        category: 'Transfer', wallet_id: fromId, to_wallet_id: toId, note,
         user_id: user ? user.id : null
     };
 
-    if(editingTransferId) {
-        const { error } = await supabaseClient.from('transactions').update(payload).eq('id', editingTransferId);
-        if (error) { showToast("Gagal update transfer!", true); return; }
-        showToast("Transfer berhasil diupdate!");
-    } else {
-        const { error } = await supabaseClient.from('transactions').insert([payload]);
-        if (error) { showToast("Gagal simpan transfer!", true); return; }
-        showToast("Transfer berhasil!");
-    }
+    const { error } = editingTransferId
+        ? await supabaseClient.from('transactions').update(payload).eq('id', editingTransferId)
+        : await supabaseClient.from('transactions').insert([payload]);
+    setSaving('btn-save-transfer', false, 'Simpan transfer');
 
-    editingTransferId = null;
+    if (error) { showToast('Gagal nyimpen transfer.', true); return; }
+    showToast(editingTransferId ? 'Transfer udah diupdate.' : 'Transfer tersimpan.');
+
     closeModal('transferModal');
     fetchCloudData();
 }
 
-// --- FUNGSI SAVE WALLET (FIX ERROR 400) ---
-// --- FUNGSI SAVE WALLET (FIX ID NULL CONSTRAINT & SESUAI DB) ---
-window.saveWallet = async function() {
-    let nameVal = document.getElementById('wallet-name').value;
-    let balanceVal = parseInt(document.getElementById('wallet-balance').value);
-    
-    if(!nameVal || isNaN(balanceVal)) { 
-        showToast("Isi nama dan saldo awalnya!", true); 
-        return; 
-    }
+// --- DOMPET ---
+async function saveWallet() {
+    const nameVal = document.getElementById('wallet-name').value.trim();
+    const balanceVal = parseInt(document.getElementById('wallet-balance').value);
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-        showToast("Sesi habis, silakan login ulang!", true);
+    if (!nameVal || isNaN(balanceVal)) { showToast('Isi nama dan saldo awalnya.', true); return; }
+
+    const user = await getCurrentUser();
+    if (!user) { showToast('Sesi habis, silakan masuk lagi.', true); return; }
+
+    setSaving('btn-save-wallet', true, 'Simpan dompet');
+    // Kolom di tabel wallets: id, nama, balance, user_id
+    const payload = { id: crypto.randomUUID(), nama: nameVal, balance: balanceVal, user_id: user.id };
+    const { error } = await supabaseClient.from('wallets').insert([payload]).select();
+    setSaving('btn-save-wallet', false, 'Simpan dompet');
+
+    if (error) {
+        console.error('Supabase error:', error);
+        showToast('Gagal nyimpen dompet. Coba lagi sebentar lagi.', true);
         return;
     }
 
-    // Masukkan 'id' acak unik + nama kolom 'nama', 'balance', 'user_id' sesuai Supabase lu
-    const payload = { 
-        id: crypto.randomUUID(), // Generator ID unik otomatis
-        nama: nameVal, 
-        balance: balanceVal, 
-        user_id: user.id 
-    };
-
-    const { data: dbData, error } = await supabaseClient.from('wallets').insert([payload]).select();
-    
-    if (error) { 
-        console.error("Supabase Error Detail:", error);
-        alert(`Gagal simpan wallet!\nPesan Supabase: ${error.message}`); 
-        return; 
-    }
-
-    showToast("Wallet berhasil ditambahkan!");
+    showToast('Dompet ditambahin.');
     closeModal('walletModal');
     fetchCloudData();
 }
 
-window.deleteWallet = function(id) {
-    customConfirm("Yakin mau hapus dompet ini?", async () => {
+function deleteWallet(id) {
+    customConfirm('Yakin mau hapus dompet ini?', async () => {
         const { error } = await supabaseClient.from('wallets').delete().eq('id', id);
-        if (error) { showToast("Gagal hapus wallet!", true); return; }
-        showToast("Wallet dihapus!");
+        if (error) { showToast('Gagal hapus dompet.', true); return; }
+        showToast('Dompet dihapus.');
         fetchCloudData();
     });
 }

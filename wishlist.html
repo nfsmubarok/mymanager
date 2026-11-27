@@ -1,122 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マネージャー Dashboard - Money</title>
+    <title>Wishlist · マネージャー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&display=swap">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#main">Langsung ke konten</a>
 
-    <div class="sidebar">
-        <div class="logo">マネージャー</div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Main Dashboard</div>
-            <a href="index.html" class="menu-item">Money Manager</a>
-            <a href="schedule.html" class="menu-item">Schedule & Planner</a>
-            <a href="wishlist.html" class="menu-item active">Wishlist Tracker</a>
+    <aside class="sidebar">
+        <div class="logo" lang="ja">マネージャー</div>
+        <nav aria-label="Menu utama">
+            <div class="menu-group">
+                <p class="menu-title">Harian</p>
+                <a href="index.html" class="menu-item">Keuangan</a>
+                <a href="schedule.html" class="menu-item">Jadwal &amp; tugas</a>
+                <a href="wishlist.html" class="menu-item active" aria-current="page">Wishlist</a>
+            </div>
+            <div class="menu-group">
+                <p class="menu-title">Santai &amp; catatan</p>
+                <a href="hobbies.html" class="menu-item">Hobi</a>
+                <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
+                <a href="minigames.html" class="menu-item">Sudoku</a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button type="button" class="btn-logout" id="btn-logout">Keluar</button>
         </div>
-        
-        <div class="menu-group">
-            <div class="menu-title">Leisure & Notes</div>
-            <a href="hobbies.html" class="menu-item">My Hobbies</a>
-            <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-            <a href="minigames.html" class="menu-item">Mini Games</a>
-        </div>
+    </aside>
 
-        <div style="margin-top: auto; padding: 0 24px;">
-            <button onclick="logout()" style="width: 100%; background: var(--sakura-pink); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(217, 140, 140, 0.2);">
-                Logout
-            </button>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="header">
+    <main class="main-content" id="main">
+        <header class="header">
             <div>
-                <h1>Wishlist Tracker</h1>
-                <p>Plan your dreams, step by step.</p>
+                <h1>Wishlist <span class="jp" lang="ja" aria-hidden="true">願い</span></h1>
+                <p>Barang impian, dicicil pelan-pelan sampai kebeli.</p>
             </div>
-            <button class="btn-add" onclick="openAddModal()">+ Add New Wish</button>
-        </div>
+            <button type="button" class="btn-add" onclick="openAddModal()">+ Tambah wishlist</button>
+        </header>
 
-        <div class="wishlist-grid" id="wishlist-container">
-            </div>
-    </div>
+        <div class="wishlist-grid" id="wishlist-container"></div>
+    </main>
 
     <div id="addWishModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="add-wish-title">
             <div class="modal-header">
-                <h2>Add New Wish</h2>
-                <button class="close-btn" onclick="closeModal('addWishModal')">✕</button>
+                <h2 id="add-wish-title">Tambah wishlist</h2>
+                <button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('addWishModal')"><span aria-hidden="true">✕</span></button>
             </div>
             <div class="form-group">
-                <label>Wish Title</label>
-                <input type="text" id="wish-title" class="form-input" placeholder="e.g., Build Campervan, PC Rakitan">
+                <label for="wish-title">Mau beli apa?</label>
+                <input type="text" id="wish-title" class="form-input" placeholder="Misal: PC rakitan">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="wish-target">Target dana (Rp)</label>
+                    <input type="number" id="wish-target" class="form-input" inputmode="numeric" min="0" placeholder="15000000">
+                </div>
+                <div class="form-group">
+                    <label for="wish-current">Udah terkumpul (Rp)</label>
+                    <input type="number" id="wish-current" class="form-input" inputmode="numeric" min="0" value="0">
+                </div>
             </div>
             <div class="form-group">
-                <label>Target Budget (Rp)</label>
-                <input type="number" id="wish-target" class="form-input" placeholder="e.g., 15000000">
-            </div>
-            <div class="form-group">
-                <label>Current Saved (Rp)</label>
-                <input type="number" id="wish-current" class="form-input" placeholder="e.g., 0" value="0">
-            </div>
-            <div class="form-group">
-                <label>Action Plans (1 plan per baris)</label>
-                <textarea id="wish-plans" class="form-input" rows="4" placeholder="Nabung 2 juta per bulan&#10;Riset harga barang&#10;Cicil beli parts"></textarea>
+                <label for="wish-plans">Rencana (satu per baris)</label>
+                <textarea id="wish-plans" class="form-input" rows="4" placeholder="Nabung 2 juta per bulan&#10;Riset harga&#10;Cicil beli parts"></textarea>
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('addWishModal')">Cancel</button>
-                <button class="btn-submit" onclick="saveNewWish()">Save Wish</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('addWishModal')">Batal</button>
+                <button type="button" class="btn-submit" id="btn-save-wish" onclick="saveNewWish()">Simpan</button>
             </div>
         </div>
     </div>
 
     <div id="editWishModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
             <div class="modal-header">
-                <h2 id="edit-modal-title">Update Progress</h2>
-                <button class="close-btn" onclick="closeModal('editWishModal')">✕</button>
-            </div>
-            
-            <div class="form-group">
-                <label>Update Saved Amount (Rp)</label>
-                <input type="number" id="edit-wish-current" class="form-input">
-                <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);" id="edit-wish-target-hint">Target: Rp 0</p>
+                <h2 id="edit-modal-title">Update progres</h2>
+                <button type="button" class="close-btn" aria-label="Tutup" onclick="closeModal('editWishModal')"><span aria-hidden="true">✕</span></button>
             </div>
 
             <div class="form-group">
-                <label>Action Plans Check</label>
-                <div class="edit-checklist" id="edit-wish-plans">
-                    </div>
+                <label for="edit-wish-current">Udah terkumpul (Rp)</label>
+                <input type="number" id="edit-wish-current" class="form-input" inputmode="numeric" min="0">
+                <p class="form-hint" id="edit-wish-target-hint">Target: Rp 0</p>
             </div>
 
-            <div class="modal-actions" style="justify-content: space-between;">
-                <button class="btn-cancel" style="color: var(--sakura-pink); border-color: var(--sakura-pink);" onclick="triggerDeleteWish()">Delete Wish</button>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-cancel" onclick="closeModal('editWishModal')">Cancel</button>
-                    <button class="btn-submit" onclick="saveEditWish()">Update</button>
+            <fieldset class="form-group">
+                <legend class="form-label">Rencana yang udah jalan</legend>
+                <div id="edit-wish-plans"></div>
+            </fieldset>
+
+            <div class="modal-actions split">
+                <button type="button" class="btn-cancel danger" onclick="triggerDeleteWish()">Hapus wishlist</button>
+                <div class="group">
+                    <button type="button" class="btn-cancel" onclick="closeModal('editWishModal')">Batal</button>
+                    <button type="button" class="btn-submit" id="btn-update-wish" onclick="saveEditWish()">Update</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="confirmModal" class="modal-overlay" style="z-index: 1001;">
-        <div class="modal-content" style="width: 350px; text-align: center; padding: 40px 30px;">
-            <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
-            <h3 style="margin-bottom: 10px; color: var(--text-dark); font-size: 18px;">Are you sure?</h3>
-            <p id="confirm-msg" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Yakin mau hapus ini?</p>
-            <div style="display: flex; justify-content: center; gap: 12px;">
-                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
-                <button class="btn-submit" style="background-color: var(--sakura-pink);" onclick="executeConfirm()">Yes, Delete</button>
-            </div>
-        </div>
-    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/wishlist.js"></script>
 </body>

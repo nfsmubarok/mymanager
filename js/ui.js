@@ -1,58 +1,73 @@
 let expenseChartInstance = null;
 
-// --- UTILITIES (ANTI CRASH) ---
-function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.innerText = msg;
-    t.style.backgroundColor = isError ? 'var(--sakura-pink)' : 'var(--matcha-green)';
-    t.style.bottom = '30px';
-    setTimeout(() => { t.style.bottom = '-100px'; }, 3000);
+// Nilai kategori di database tetap bahasa Inggris, yang ditampilin bahasa Indonesia
+const categoryLabels = {
+    'Food & Drinks': 'Makan & minum',
+    'Transport': 'Transport',
+    'Salary': 'Gaji',
+    'Entertainment': 'Hiburan',
+    'Shopping': 'Belanja',
+    'Transfer': 'Transfer',
+    'Other': 'Lainnya'
+};
+function categoryLabel(cat) { return categoryLabels[cat] || cat || 'Lainnya'; }
+
+// Warna chart diturunin dari palet zen (matcha, sakura, ocean + versi muda)
+const chartColors = ['#5E6B45', '#A64B52', '#506870', '#8F9779', '#D98C8C', '#7B9095', '#C9CDB8'];
+
+const LIST_IDS = ['recent-tx-list', 'wallets-list', 'all-tx-list'];
+const AMOUNT_IDS = ['display-current-balance', 'display-total-savings', 'display-total-income', 'display-total-expense', 'display-net'];
+
+function showDashboardLoading() {
+    LIST_IDS.forEach(id => showLoading(id));
+    AMOUNT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = 'Memuat...'; el.classList.add('is-loading'); } });
+    setChartState('loading', 'Lagi ngambil data...');
 }
 
-function formatRp(angka) {
-    if (angka === undefined || angka === null || isNaN(angka)) return "Rp 0";
-    return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+function showDashboardError() {
+    LIST_IDS.forEach(id => showError(id, 'Data ga kebaca. Cek koneksi lu, terus coba lagi.', fetchCloudData));
+    AMOUNT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = '-'; el.classList.remove('is-loading'); } });
+    setChartState('error', 'Diagram belum bisa ditampilin.');
 }
 
-function getIcon(category) {
-    const icons = { "Food & Drinks": "🍜", "Transport": "🚗", "Salary": "💵", "Entertainment": "🎮", "Shopping": "🛍️", "Transfer": "🔄" };
-    return icons[category] || "📝";
+function setChartState(type, message) {
+    const canvas = document.getElementById('expenseChart');
+    const state = document.getElementById('chart-state');
+    if (!canvas || !state) return;
+    if (!type) { state.hidden = true; canvas.style.display = 'block'; return; }
+    canvas.style.display = 'none';
+    state.hidden = false;
+    state.className = 'state state-' + type;
+    state.textContent = message;
 }
+
+function txSign(type) { return type === 'expense' ? '-' : (type === 'income' ? '+' : ''); }
+function txColorClass(type) { return type === 'expense' ? 'text-red' : (type === 'income' ? 'text-green' : 'text-blue'); }
+function walletName(id) { const w = wallets.find(w => w.id === id); return w ? w.name : 'Dompet terhapus'; }
 
 // --- RENDER DASHBOARD ---
 function updateDashboard() {
-    const mainSelect = document.getElementById('main-wallet-select');
-    const txWallet = document.getElementById('tx-wallet');
-    const tfFrom = document.getElementById('transfer-from');
-    const tfTo = document.getElementById('transfer-to');
-    
-    if (mainSelect && txWallet && tfFrom && tfTo) {
-        let currentMainVal = mainSelect.value;
-        mainSelect.innerHTML = ''; txWallet.innerHTML = ''; tfFrom.innerHTML = ''; tfTo.innerHTML = '';
-        wallets.forEach(w => {
-            let opt = `<option value="${w.id}">${w.name}</option>`;
-            mainSelect.innerHTML += opt; txWallet.innerHTML += opt; tfFrom.innerHTML += opt; tfTo.innerHTML += opt;
-        });
-        if (currentMainVal && wallets.find(w => w.id === currentMainVal)) mainSelect.value = currentMainVal;
-    }
+    const selects = ['main-wallet-select', 'tx-wallet', 'transfer-from', 'transfer-to'].map(id => document.getElementById(id));
+    const prevMain = selects[0] ? selects[0].value : '';
+    const optionsHtml = wallets.map(w => `<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
+    selects.forEach(sel => { if (sel) sel.innerHTML = optionsHtml || '<option value="">Belum ada dompet</option>'; });
+    if (prevMain && wallets.find(w => w.id === prevMain)) selects[0].value = prevMain;
 
-    const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
-    let totalIncome = 0; let totalExpense = 0; let totalSavings = 0; let expensesByCategory = {};
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    let totalIncome = 0, totalExpense = 0, totalSavings = 0;
+    const expensesByCategory = {};
 
-    // 1. Tentukan Saldo Awal (Dari Database)
+    // Saldo awal dari database, lalu dihitung ulang dari semua transaksi
     wallets.forEach(w => { w.realBalance = parseInt(w.balance) || 0; });
-
-    // 2. Sortir Transaksi dan Hitung Saldo Dinamis
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    transactions.forEach(tx => {
-        let amt = parseInt(tx.amount) || 0;
-        let txDate = new Date(tx.date);
 
-        // Rumus Matematika Saldo Dompet
-        let wFrom = wallets.find(w => w.id === tx.walletId);
-        let wTo = wallets.find(w => w.id === tx.to_wallet_id);
+    transactions.forEach(tx => {
+        const amt = parseInt(tx.amount) || 0;
+        const txDate = new Date(tx.date);
+        const wFrom = wallets.find(w => w.id === tx.walletId);
+        const wTo = wallets.find(w => w.id === tx.to_wallet_id);
 
         if (tx.type === 'expense' && wFrom) wFrom.realBalance -= amt;
         if (tx.type === 'income' && wFrom) wFrom.realBalance += amt;
@@ -61,264 +76,225 @@ function updateDashboard() {
             if (wTo) wTo.realBalance += amt;
         }
 
-        // Hitung Statistik Pemasukan/Pengeluaran Khusus Bulan Ini
         if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
             if (tx.type === 'income') totalIncome += amt;
             if (tx.type === 'expense') {
                 totalExpense += amt;
-                if (!expensesByCategory[tx.category]) expensesByCategory[tx.category] = 0;
-                expensesByCategory[tx.category] += amt;
+                const label = categoryLabel(tx.category);
+                expensesByCategory[label] = (expensesByCategory[label] || 0) + amt;
             }
         }
     });
 
-    // 3. Hitung Ulang Total Tabungan Seluruh Dompet
     wallets.forEach(w => totalSavings += w.realBalance);
 
+    const monthHeading = document.getElementById('month-heading');
+    if (monthHeading) monthHeading.textContent = 'Bulan ini, ' + now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
     updateCurrentBalanceDisplay();
-    if(document.getElementById('display-total-income')) document.getElementById('display-total-income').innerText = formatRp(totalIncome);
-    if(document.getElementById('display-total-expense')) document.getElementById('display-total-expense').innerText = formatRp(totalExpense);
-    if(document.getElementById('display-total-savings')) document.getElementById('display-total-savings').innerText = formatRp(totalSavings);
-    
-    // --- LOGIKA BIKIN PIE CHART STATISTICS ---
-    const chartCanvas = document.getElementById('expenseChart');
-    const emptyStats = document.getElementById('empty-stats');
+    setAmount('display-total-savings', formatRp(totalSavings));
+    setAmount('display-total-income', formatRp(totalIncome));
+    setAmount('display-total-expense', formatRp(totalExpense));
+    const net = totalIncome - totalExpense;
+    setAmount('display-net', (net > 0 ? '+' : '') + formatRp(net));
+    const netEl = document.getElementById('display-net');
+    if (netEl) netEl.className = net < 0 ? 'text-red' : 'text-green';
 
-    if (chartCanvas && emptyStats) {
-        if (Object.keys(expensesByCategory).length === 0) {
-            chartCanvas.style.display = 'none';
-            emptyStats.style.display = 'block';
-        } else {
-            chartCanvas.style.display = 'block';
-            emptyStats.style.display = 'none';
-
-            const labels = Object.keys(expensesByCategory);
-            const data = Object.values(expensesByCategory);
-            
-            // Pakai palette warna Zen bawaan CSS lu
-            const bgColors = ['#D98C8C', '#7B9095', '#8F9779', '#E2E8F0', '#F6AD55', '#B794F4'];
-
-            // Hancurin chart lama kalau ada, biar pas nambah data grafiknya ga numpuk/nge-glitch
-            if (expenseChartInstance) {
-                expenseChartInstance.destroy(); 
-            }
-
-            const ctx = chartCanvas.getContext('2d');
-            expenseChartInstance = new Chart(ctx, {
-                type: 'doughnut', // Doughnut itu Pie Chart versi bolong tengah biar lebih estetik modern
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: bgColors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { 
-                                font: { size: 11, family: "'Segoe UI', Tahoma, sans-serif" },
-                                color: '#718096',
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                // Rumus otomatis nampilin harga + persentase
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    let val = context.raw || 0;
-                                    let percentage = ((val / totalExpense) * 100).toFixed(1) + '%';
-                                    return ` ${label}: ${formatRp(val)} (${percentage})`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-    // -----------------------------------------
-    // Wallets List
-    const walletsListDiv = document.getElementById('wallets-list');
-    if (walletsListDiv) {
-        walletsListDiv.innerHTML = '';
-        wallets.forEach(w => {
-            walletsListDiv.innerHTML += `
-                <div class="wallet-sub-box">
-                    <div>
-                        <p style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${w.name}</p>
-                        <!-- Panggil realBalance di sini -->
-                        <p style="font-weight: bold; font-size: 16px;">${formatRp(w.realBalance)}</p>
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button onclick="deleteWallet('${w.id}')" style="background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;" title="Delete Wallet">🗑️</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    // Recent Tx
-    const recentDiv = document.getElementById('recent-tx-list');
-    if (recentDiv) {
-        recentDiv.innerHTML = '';
-        let recentTxs = transactions.slice(0, 5);
-        if (recentTxs.length === 0) recentDiv.innerHTML = '<div class="empty-state">📮 No transactions yet</div>';
-        else {
-            recentTxs.forEach(tx => {
-                let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
-                let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
-                let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
-                recentDiv.innerHTML += `
-                    <div class="transaction-item">
-                        <div>
-                            <p style="font-weight: 600; font-size: 14px;">${tx.desc} ${getIcon(tx.category)}</p>
-                            <p style="font-size: 12px; color: var(--text-muted);">${w.name} • ${tx.date}</p>
-                        </div>
-                        <p style="color: ${color}; font-weight: bold;">${sign} ${formatRp(tx.amount)}</p>
-                    </div>`;
-            });
-        }
-    }
-
+    renderChart(expensesByCategory, totalExpense);
+    renderWallets();
+    renderRecent();
     renderAllTransactions();
 }
 
-function updateCurrentBalanceDisplay() {
-    let select = document.getElementById('main-wallet-select');
-    let display = document.getElementById('display-current-balance');
-    if (!select || !display) return;
-    let w = wallets.find(w => w.id === select.value);
-    
-    // Pastikan angka besar di kartu Current Balance pakai realBalance
-    display.innerText = w ? formatRp(w.realBalance) : 'Rp 0';
+function setAmount(id, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-loading');
 }
 
-function renderAllTransactions() {
-    const listDiv = document.getElementById('all-tx-list');
-    const monthFilterEl = document.getElementById('filter-month');
-    if (!listDiv || !monthFilterEl) return;
-    
-    const monthFilter = monthFilterEl.value;
-    listDiv.innerHTML = '';
-    
-    let filteredTxs = transactions;
-    if (monthFilter !== 'all') filteredTxs = transactions.filter(tx => new Date(tx.date).getMonth() == monthFilter);
+function renderChart(expensesByCategory, totalExpense) {
+    const chartCanvas = document.getElementById('expenseChart');
+    if (!chartCanvas) return;
+    const labels = Object.keys(expensesByCategory);
 
-    if (filteredTxs.length === 0) { listDiv.innerHTML = '<div class="empty-state">Kosong nih bulan ini.</div>'; return; }
+    if (labels.length === 0) {
+        setChartState('empty', 'Belum ada pengeluaran bulan ini.');
+        return;
+    }
+    if (typeof Chart === 'undefined') {
+        setChartState('error', 'Library diagram gagal dimuat.');
+        return;
+    }
+    setChartState(null);
 
-    filteredTxs.forEach(tx => {
-        let w = wallets.find(w => w.id === tx.walletId) || {name: 'Unknown'};
-        let color = tx.type === 'expense' ? 'var(--sakura-pink)' : (tx.type === 'income' ? 'var(--matcha-green)' : 'var(--ocean-blue)');
-        let sign = tx.type === 'expense' ? '-' : (tx.type === 'income' ? '+' : '⇌');
-        listDiv.innerHTML += `
-            <div class="transaction-item" style="padding: 16px 0; border-bottom: 1px solid var(--border-color);">
-                <div style="flex:1;">
-                    <p style="font-weight: 600; font-size: 15px; color: var(--text-dark)">${tx.desc} ${getIcon(tx.category)}</p>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-                        <span style="background: var(--bg-rice); padding: 2px 6px; border-radius: 4px;">${w.name}</span> • ${tx.category} • ${tx.date}
-                    </p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <p style="color: ${color}; font-weight: bold; font-size: 15px;">${sign} ${formatRp(tx.amount)}</p>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="editTransaction('${tx.id}')" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Edit">✏️</button>
-                        <button onclick="triggerDeleteTx('${tx.id}')" style="background:var(--bg-rice); border:1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; cursor:pointer;" title="Delete">🗑️</button>
-                    </div>
-                </div>
-            </div>`;
+    if (expenseChartInstance) expenseChartInstance.destroy();
+    expenseChartInstance = new Chart(chartCanvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{ data: Object.values(expensesByCategory), backgroundColor: chartColors, borderWidth: 2, borderColor: '#ffffff' }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { font: { size: 12 }, color: '#5F6B78', usePointStyle: true }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const val = context.raw || 0;
+                            const pct = totalExpense ? ((val / totalExpense) * 100).toFixed(1) : '0';
+                            return ` ${context.label}: ${formatRp(val)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
 }
 
+function renderWallets() {
+    const el = document.getElementById('wallets-list');
+    if (!el) return;
+    clearBusy(el);
+    if (wallets.length === 0) {
+        el.innerHTML = '<div class="empty-state">Belum ada dompet. Tambahin satu dulu biar bisa nyatet.</div>';
+        return;
+    }
+    el.innerHTML = wallets.map(w => `
+        <div class="wallet-sub-box">
+            <div>
+                <p class="wallet-name">${esc(w.name)}</p>
+                <p class="wallet-balance">${formatRp(w.realBalance)}</p>
+            </div>
+            <button type="button" class="btn-text danger" onclick="deleteWallet('${esc(w.id)}')" aria-label="Hapus dompet ${esc(w.name)}">Hapus</button>
+        </div>`).join('');
+}
+
+function renderRecent() {
+    const el = document.getElementById('recent-tx-list');
+    if (!el) return;
+    clearBusy(el);
+    const recent = transactions.slice(0, 5);
+    if (recent.length === 0) {
+        el.innerHTML = '<div class="empty-state">Belum ada transaksi. Catat yang pertama, misalnya jajan hari ini.</div>';
+        return;
+    }
+    el.innerHTML = recent.map(tx => `
+        <div class="transaction-item">
+            <div class="tx-main">
+                <p class="tx-desc">${esc(tx.desc)}</p>
+                <p class="tx-meta">${esc(walletName(tx.walletId))} · ${esc(categoryLabel(tx.category))} · ${formatDate(tx.date)}</p>
+            </div>
+            <p class="tx-amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
+        </div>`).join('');
+}
+
+function updateCurrentBalanceDisplay() {
+    const select = document.getElementById('main-wallet-select');
+    const display = document.getElementById('display-current-balance');
+    if (!select || !display) return;
+    const w = wallets.find(w => w.id === select.value);
+    display.textContent = w ? formatRp(w.realBalance) : 'Rp 0';
+    display.classList.remove('is-loading');
+}
+
+function renderAllTransactions() {
+    const el = document.getElementById('all-tx-list');
+    const monthFilterEl = document.getElementById('filter-month');
+    if (!el || !monthFilterEl) return;
+    clearBusy(el);
+
+    const monthFilter = monthFilterEl.value;
+    const filtered = monthFilter === 'all'
+        ? transactions
+        : transactions.filter(tx => new Date(tx.date).getMonth() == monthFilter);
+
+    if (filtered.length === 0) {
+        el.innerHTML = '<div class="empty-state">Kosong nih di bulan ini.</div>';
+        return;
+    }
+
+    el.innerHTML = filtered.map(tx => {
+        const meta = tx.type === 'transfer'
+            ? `<span class="chip">${esc(walletName(tx.walletId))}</span> ke <span class="chip">${esc(walletName(tx.to_wallet_id))}</span> · ${formatDate(tx.date)}`
+            : `<span class="chip">${esc(walletName(tx.walletId))}</span> · ${esc(categoryLabel(tx.category))} · ${formatDate(tx.date)}`;
+        return `
+        <div class="transaction-item">
+            <div class="tx-main">
+                <p class="tx-desc">${esc(tx.desc)}</p>
+                <p class="tx-meta">${meta}${tx.note ? ' · ' + esc(tx.note) : ''}</p>
+            </div>
+            <div class="tx-side">
+                <p class="tx-amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
+                <div class="tx-actions">
+                    <button type="button" class="btn-text" onclick="editTransaction('${esc(tx.id)}')" aria-label="Edit ${esc(tx.desc)}">Edit</button>
+                    <button type="button" class="btn-text danger" onclick="triggerDeleteTx('${esc(tx.id)}')" aria-label="Hapus ${esc(tx.desc)}">Hapus</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 function editTransaction(id) {
-    let tx = transactions.find(t => t.id == id);
-    if(tx) {
-        if(tx.type === 'transfer') {
-            editingTransferId = id;
-            document.getElementById('transfer-modal-title').innerText = "Edit Transfer";
-            document.getElementById('transfer-from').value = tx.walletId;
-            document.getElementById('transfer-to').value = tx.to_wallet_id || '';
-            document.getElementById('transfer-amount').value = tx.amount;
-            document.getElementById('transfer-date').value = tx.date;
-            document.getElementById('transfer-note').value = tx.note || '';
-            openModal('transferModal');
-        } else {
-            editingTxId = id;
-            document.getElementById('tx-modal-title').innerText = "Edit Transaction";
-            let radioExp = document.getElementById('type-expense');
-            let radioInc = document.getElementById('type-income');
-            if(tx.type === 'expense' && radioExp) radioExp.checked = true;
-            if(tx.type === 'income' && radioInc) radioInc.checked = true;
-            document.getElementById('tx-desc').value = tx.desc;
-            document.getElementById('tx-amount').value = tx.amount;
-            document.getElementById('tx-date').value = tx.date;
-            document.getElementById('tx-category').value = tx.category;
-            document.getElementById('tx-wallet').value = tx.walletId;
-            document.getElementById('tx-note').value = tx.note || '';
-            openModal('transactionModal');
-        }
+    const tx = transactions.find(t => t.id == id);
+    if (!tx) return;
+    if (tx.type === 'transfer') {
+        editingTransferId = tx.id;
+        openModal('transferModal');
+        document.getElementById('transfer-modal-title').textContent = 'Edit transfer';
+        document.getElementById('transfer-from').value = tx.walletId;
+        document.getElementById('transfer-to').value = tx.to_wallet_id || '';
+        document.getElementById('transfer-amount').value = tx.amount;
+        document.getElementById('transfer-date').value = tx.date;
+        document.getElementById('transfer-note').value = tx.note || '';
+    } else {
+        editingTxId = tx.id;
+        openModal('transactionModal');
+        document.getElementById('tx-modal-title').textContent = 'Edit transaksi';
+        document.getElementById(tx.type === 'expense' ? 'type-expense' : 'type-income').checked = true;
+        document.getElementById('tx-desc').value = tx.desc;
+        document.getElementById('tx-amount').value = tx.amount;
+        document.getElementById('tx-date').value = tx.date;
+        document.getElementById('tx-category').value = tx.category;
+        document.getElementById('tx-wallet').value = tx.walletId;
+        document.getElementById('tx-note').value = tx.note || '';
     }
 }
 
-// --- MODALS & CONFIRM ---
-let confirmAction = null; 
-function customConfirm(message, actionCallback) {
-    const msgEl = document.getElementById('confirm-msg');
-    const modalEl = document.getElementById('confirmModal');
-    if (msgEl) msgEl.innerText = message;
-    confirmAction = actionCallback; 
-    if (modalEl) modalEl.style.display = 'flex';
-}
-
-function executeConfirm() { 
-    if(confirmAction) { confirmAction(); confirmAction = null; } 
-    closeModal('confirmModal'); 
-}
-
-function openModal(modalId) { 
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    modal.style.display = 'flex'; 
-    if(modalId === 'transactionModal' && !editingTxId) {
-        document.getElementById('tx-modal-title').innerText = "Add Transaction";
-        document.getElementById('tx-desc').value = ''; 
+// --- RESET FORM PAS MODAL DIBUKA / DITUTUP ---
+window.onModalOpen = function(modalId) {
+    if (modalId === 'transactionModal' && !editingTxId) {
+        document.getElementById('tx-modal-title').textContent = 'Catat transaksi';
+        document.getElementById('type-income').checked = true;
+        document.getElementById('tx-desc').value = '';
         document.getElementById('tx-amount').value = '';
-        document.getElementById('tx-date').valueAsDate = new Date(); 
+        document.getElementById('tx-date').value = localDateStr();
         document.getElementById('tx-note').value = '';
     } else if (modalId === 'transferModal' && !editingTransferId) {
-        document.getElementById('transfer-modal-title').innerText = "Transfer Balance";
-        document.getElementById('transfer-date').valueAsDate = new Date(); 
+        document.getElementById('transfer-modal-title').textContent = 'Pindahin saldo';
+        document.getElementById('transfer-date').value = localDateStr();
         document.getElementById('transfer-amount').value = '';
         document.getElementById('transfer-note').value = '';
     } else if (modalId === 'walletModal') {
         document.getElementById('wallet-name').value = '';
         document.getElementById('wallet-balance').value = '';
     }
-}
-
-function closeModal(modalId) { 
-    const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = 'none'; 
-    if(modalId === 'transactionModal') editingTxId = null;
-    if(modalId === 'transferModal') editingTransferId = null;
-}
-
-window.onclick = function(event) { 
-    if (event.target && event.target.classList.contains('modal-overlay')) { 
-        event.target.style.display = "none"; 
-        editingTxId = null; 
-        editingTransferId = null; 
-    } 
-}
-
-// --- INITIALIZE START ---
-window.onload = () => { 
-    const filterEl = document.getElementById('filter-month');
-    if (filterEl) filterEl.value = new Date().getMonth();
-    checkAuth(); 
 };
+window.onModalClose = function(modalId) {
+    if (modalId === 'transactionModal') editingTxId = null;
+    if (modalId === 'transferModal') editingTransferId = null;
+};
+
+// --- MULAI ---
+document.addEventListener('DOMContentLoaded', async () => {
+    const filterEl = document.getElementById('filter-month');
+    if (filterEl) filterEl.value = String(new Date().getMonth());
+    showDashboardLoading();
+    if (await requireAuth()) fetchCloudData();
+});

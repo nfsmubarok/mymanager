@@ -1,36 +1,35 @@
-let solvedBoard = []; // Nyimpen kunci jawaban
+let solvedBoard = []; // kunci jawaban
 let lives = 3;
-let cellsLeft = 45; // Default (nanti ditimpa sama level)
+let cellsLeft = 45;
 
-window.generateSudoku = function() {
-    // Ambil level dari dropdown
+function setStatus(msg) {
+    const el = document.getElementById('game-status');
+    if (el) el.textContent = msg;
+}
+
+function generateSudoku() {
     const levelDropdown = document.getElementById('sudoku-level');
     const targetHoles = levelDropdown ? parseInt(levelDropdown.value) : 45;
 
-    // Reset status game sesuai level
     lives = 3;
-    cellsLeft = targetHoles; 
+    cellsLeft = targetHoles;
     updateLivesDisplay();
+    setStatus('');
 
-    // 1. Template Master (Valid 100%)
+    // Papan dasar yang valid, lalu angkanya diacak biar tiap game beda
     const base = [
         [1,2,3, 4,5,6, 7,8,9], [4,5,6, 7,8,9, 1,2,3], [7,8,9, 1,2,3, 4,5,6],
         [2,3,4, 5,6,7, 8,9,1], [5,6,7, 8,9,1, 2,3,4], [8,9,1, 2,3,4, 5,6,7],
         [3,4,5, 6,7,8, 9,1,2], [6,7,8, 9,1,2, 3,4,5], [9,1,2, 3,4,5, 6,7,8]
     ];
-
-    // 2. Acak angka biar jadi papan unik
     const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
-    solvedBoard = base.map(row => row.map(val => nums[val-1])); // Ini KUNCI JAWABANNYA
-    
-    // 3. Clone untuk papan puzzle (yang bakal dibolongin)
-    let puzzleBoard = JSON.parse(JSON.stringify(solvedBoard));
-    
+    solvedBoard = base.map(row => row.map(val => nums[val - 1]));
+
+    const puzzleBoard = solvedBoard.map(row => row.slice());
     let holes = targetHoles;
-    while(holes > 0) {
-        let r = Math.floor(Math.random() * 9);
-        let c = Math.floor(Math.random() * 9);
-        // Pastiin kotaknya belum bolong
+    while (holes > 0) {
+        const r = Math.floor(Math.random() * 9);
+        const c = Math.floor(Math.random() * 9);
         if (puzzleBoard[r][c] !== 0) {
             puzzleBoard[r][c] = 0;
             holes--;
@@ -41,80 +40,65 @@ window.generateSudoku = function() {
 
 function updateLivesDisplay() {
     const display = document.getElementById('lives-display');
-    if(display) {
-        display.innerText = '❤️'.repeat(lives) + '💔'.repeat(3 - lives);
-    }
+    if (!display) return;
+    display.textContent = '●'.repeat(lives) + '○'.repeat(3 - lives);
+    display.setAttribute('aria-label', `Sisa ${lives} dari 3`);
+}
+
+function lockBoard() {
+    document.querySelectorAll('.sudoku-cell').forEach(input => {
+        input.readOnly = true;
+        input.classList.add('readonly');
+    });
 }
 
 function renderBoard(board) {
     const container = document.getElementById('sudoku-board');
     container.innerHTML = '';
-    
-    for(let r = 0; r < 9; r++) {
-        for(let c = 0; c < 9; c++) {
-            let val = board[r][c];
-            let input = document.createElement('input');
-            input.type = 'number';
-            input.min = 1; input.max = 9;
+
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            const val = board[r][c];
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'numeric';
+            input.maxLength = 1;
+            input.autocomplete = 'off';
             input.className = 'sudoku-cell';
-            
-            // CSS Garis tebal pembatas blok 3x3
+            input.setAttribute('aria-label', `Baris ${r + 1}, kolom ${c + 1}`);
             if (c === 2 || c === 5) input.classList.add('thick-right');
             if (r === 2 || r === 5) input.classList.add('thick-bottom');
 
             if (val !== 0) {
-                // Kotak bawaan soal (gak bisa diedit)
                 input.value = val;
                 input.classList.add('readonly');
                 input.readOnly = true;
             } else {
-                // Kotak kosong (event listener buat AUTO CHECK)
-                input.addEventListener('input', function() {
-                    let inputVal = this.value;
-                    
-                    // Kalau di backspace/kosong, biarin aja
-                    if (inputVal === '') return; 
-                    
-                    // Biar gak bisa ngetik 2 angka (misal: 12)
-                    if (inputVal.length > 1) {
-                        this.value = inputVal.slice(-1); 
-                        inputVal = this.value;
-                    }
-                    
-                    let num = parseInt(inputVal);
-                    if (num < 1 || num > 9 || isNaN(num)) {
-                        this.value = ''; return;
-                    }
+                input.addEventListener('input', function () {
+                    const num = parseInt(this.value.slice(-1));
+                    if (this.value === '') return;
+                    if (isNaN(num) || num < 1 || num > 9) { this.value = ''; return; }
+                    this.value = num;
 
-                    // --- LOGIKA PENGECEKAN JAWABAN ---
-                    let correctVal = solvedBoard[r][c];
-                    
-                    if (num === correctVal) {
-                        // JAWABAN BENAR
-                        this.classList.add('readonly');
+                    if (num === solvedBoard[r][c]) {
+                        this.classList.add('readonly', 'solved');
                         this.readOnly = true;
-                        this.style.color = 'var(--ocean-blue)'; // Warna biru buat tebakan bener
                         cellsLeft--;
-                        
                         if (cellsLeft === 0) {
-                            setTimeout(() => alert("GGWP! 🧠 Lu berhasil mecahin Sudoku-nya!"), 100);
+                            setStatus('Beres! Lu berhasil mecahin sudoku-nya.');
+                            showToast('Beres! Sudoku kepecahin.');
                         }
                     } else {
-                        // JAWABAN SALAH
                         lives--;
                         updateLivesDisplay();
-                        this.value = ''; // Kosongin lagi
-                        
-                        // Efek kedip merah pas salah
-                        this.style.backgroundColor = 'var(--sakura-pink)';
-                        setTimeout(() => { this.style.backgroundColor = 'transparent'; }, 400);
-
-                        // Kalau nyawa abis
+                        this.value = '';
+                        this.classList.add('wrong');
+                        setTimeout(() => this.classList.remove('wrong'), 400);
                         if (lives <= 0) {
-                            setTimeout(() => {
-                                alert("Game Over! 💀 Nyawa lu abis.");
-                                lockBoard(); // Kunci semua kotak
-                            }, 100);
+                            lockBoard();
+                            setStatus('Nyawa abis. Klik "Ulang dari awal" buat coba lagi.');
+                        } else {
+                            setStatus(`Angka ${num} salah di situ.`);
                         }
                     }
                 });
@@ -124,16 +108,17 @@ function renderBoard(board) {
     }
 }
 
-function lockBoard() {
-    let inputs = document.querySelectorAll('.sudoku-cell');
-    inputs.forEach(input => {
-        input.readOnly = true;
-        input.classList.add('readonly');
-    });
-}
+// Panah keyboard buat pindah antar kotak
+document.addEventListener('keydown', (e) => {
+    if (!e.target.classList || !e.target.classList.contains('sudoku-cell')) return;
+    const moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 };
+    if (!(e.key in moves)) return;
+    const cells = Array.from(document.querySelectorAll('.sudoku-cell'));
+    const next = cells[cells.indexOf(e.target) + moves[e.key]];
+    if (next) { e.preventDefault(); next.focus(); }
+});
 
-// Langsung generate board pas pertama kali halaman dibuka
-window.onload = () => { 
-    if(typeof checkAuth === 'function') checkAuth(); 
-    generateSudoku(); 
-};
+document.addEventListener('DOMContentLoaded', async () => {
+    generateSudoku();
+    await requireAuth();
+});

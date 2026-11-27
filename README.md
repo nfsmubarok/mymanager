@@ -1,39 +1,62 @@
-# 🎋 Zen Dashboard
+# Zen Dashboard (マネージャー)
 
-> A centralized, distraction-free personal management dashboard to seamlessly track finances, schedule tasks, and manage hobbies with a clean and neat UI.
+A personal dashboard I use to keep money, plans, and small hobbies in one place. The UI is in casual Indonesian, styled after rice paper, matcha, and sakura.
 
+Live: https://zenmanager-hazel.vercel.app/login.html
 
-## 🚀 Live Demo
+Click **Coba akun demo** on the login page to look around without signing up. The demo account is shared by every visitor, so don't put anything personal there.
 
-**Live URL:** [https://zenmanager-hazel.vercel.app/login.html]
+<!-- TODO: add 2 real screenshots (money page + schedule) to docs/ and link them here -->
 
-**Want to test it out quickly?** You don't need to register! Just click the **"Try Demo Account"** button on the login page to explore the full functionality of the app.
+## What's inside
 
----
+| Page | What it does |
+| --- | --- |
+| Keuangan | Income, expense, and transfers across several wallets. Balances are recalculated from the transaction history, plus a doughnut chart of this month's spending by category (Chart.js). |
+| Jadwal & tugas | Monthly calendar with events per day, and a to-do list sorted by deadline and priority. |
+| Wishlist | Savings target per item, progress bar, and a checklist of steps to get there. |
+| Hobi | Watch/play queue and rated reviews for anime, films, series, and games. |
+| Dumpspaces | Quick notes, links, and image uploads (Supabase Storage). |
+| Sudoku | A small sudoku with three difficulty levels and three lives. |
 
-## ✨ Features
+## Stack
 
-- 💰 **Money Manager:** Dynamic income, expense, and transfer tracking across multiple wallets. Includes a real-time **Pie Chart visualization** (powered by `Chart.js`) to monitor monthly expenses.
-- 📅 **Schedule & Task Planner:** An interactive calendar with daily schedule modals and priority-based to-do lists.
-- 🎯 **Leisure Hub:** - **Wishlist Tracker:** Track saving progress for your dream items.
-  - **Hobbies & Ratings:** Log and review movies, anime, or games.
-  - **Zen Sudoku:** An embedded Sudoku mini-game featuring a built-in auto-validation algorithm and a "lives" system for quick brain breaks.
-- 📦 **Dumpspaces:** A dedicated space to drop notes, important links, and image uploads.
-- 🔒 **Secure Authentication:** Fully protected using **Supabase Auth**. Employs Row Level Security (RLS) to ensure strict data isolation—users can only access their own data.
+- Plain HTML, CSS, and JavaScript. No framework and no build step.
+- Supabase for auth, Postgres, and file storage.
+- Chart.js for the spending chart.
+- Hosted on Vercel.
 
----
+## Project structure
 
-## 🛠️ Tech Stack
+```
+css/style.css      all styles, design tokens at the top
+js/common.js       shared helpers: HTML escaping, toast, modal (Esc + focus), confirm dialog, loading/error states
+js/auth.js         Supabase client, login guard, logout
+js/login.js        login, sign up, demo login
+js/api.js          money page: fetch + save (wallets, transactions, transfers)
+js/ui.js           money page: rendering and chart
+js/schedule.js     calendar and tasks
+js/wishlist.js     wishlist
+js/hobbies.js      hobbies
+js/dumpspaces.js   notes, links, images
+js/minigames.js    sudoku
+```
 
-- **Frontend:** Vanilla HTML, Custom CSS (Mobile-Responsive), Modular JavaScript
-- **Backend / BaaS:** Supabase (PostgreSQL, Authentication, Cloud Storage)
-- **Data Visualization:** Chart.js
-- **Deployment & Hosting:** Vercel / GitHub
+## Running it locally
 
----
+Any static server works, for example:
 
-## 🏗️ Architecture Highlight
+```
+npx serve .
+```
 
-Building this application was a massive learning curve. The project was successfully refactored from a monolithic file structure into a **clean, modular architecture**. 
+Then open `http://localhost:3000/login.html`.
 
-Instead of relying on heavy frontend frameworks, each core feature (`api.js`, `ui.js`, `schedule.js`, `minigames.js`) has its own dedicated logic file. This ensures the application remains lightweight, scalable, maintainable, and highly performant.
+## Security notes
+
+- The Supabase key in `js/auth.js` is the publishable (anon) key, which is meant to be public. Data isolation depends on Row Level Security, so every table (`wallets`, `transactions`, `schedules`, `tasks`, `wishlists`, `hobbies`, `dumpspaces`) and the `dumps-images` bucket need RLS policies that limit rows to `auth.uid() = user_id`.
+- User text is escaped before it is rendered, and links and images only accept `http`/`https` URLs. This matters because the demo account is shared between visitors.
+
+## What I learned
+
+Started as one big file and got split into one script per page as features piled up. The latest pass cleaned up accessibility (keyboard use, focus, color contrast), added loading and error states, and fixed an XSS hole that the shared demo account made reachable.

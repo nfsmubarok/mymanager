@@ -1,147 +1,166 @@
-let wishlists = JSON.parse(localStorage.getItem('finzen_wishlists')) || [];
-let activeEditId = null; 
+let wishlists = [];
+let activeEditId = null;
 
-function formatRp(angka) { return angka >= 1000000 ? "Rp " + (angka / 1000000).toFixed(1).replace('.0', '') + " Jt" : "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
-function formatRpFull(angka) { return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+// Format pendek buat kartu: 15000000 jadi "Rp 15 jt"
+function formatRpShort(angka) {
+    const n = Number(angka) || 0;
+    if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1).replace('.0', '').replace('.', ',') + ' jt';
+    return formatRp(n);
+}
 
-// --- TARIK DATA CLOUD ---
+function parsePlans(plans) {
+    if (!plans) return [];
+    if (typeof plans === 'string') {
+        try { return JSON.parse(plans) || []; } catch (e) { return []; }
+    }
+    return plans;
+}
+
+// --- TARIK DATA ---
 async function fetchCloudWishlists() {
+    const container = document.getElementById('wishlist-container');
+    showLoading(container);
     try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const user = await getCurrentUser();
         if (!user) return;
 
-        const { data: dbWish, error } = await supabaseClient.from('wishlists').select('*').eq('user_id', user.id);
-        if (dbWish) {
-            wishlists = dbWish.map(w => ({
-                id: w.id,
-                title: w.title,
-                targetAmount: w.target_amount,
-                currentAmount: w.current_amount,
-                plans: typeof w.plans === 'string' ? JSON.parse(w.plans) : (w.plans || [])
-            }));
-            localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
-            renderWishlists();
-        }
-    } catch (err) { console.error("Fetch Wishlists Error:", err); }
+        const { data, error } = await supabaseClient.from('wishlists').select('*').eq('user_id', user.id);
+        if (error) throw error;
+        wishlists = (data || []).map(w => ({
+            id: w.id,
+            title: w.title,
+            targetAmount: Number(w.target_amount) || 0,
+            currentAmount: Number(w.current_amount) || 0,
+            plans: parsePlans(w.plans)
+        }));
+        renderWishlists();
+    } catch (err) {
+        console.error('Fetch wishlists error:', err);
+        showError(container, 'Wishlist ga kebaca. Cek koneksi lu, terus coba lagi.', fetchCloudWishlists);
+    }
 }
 
-window.renderWishlists = function() {
+function renderWishlists() {
     const container = document.getElementById('wishlist-container');
-    container.innerHTML = '';
-    if (wishlists.length === 0) return container.innerHTML = `<div class="empty-state"><span style="font-size: 24px; display: block; margin-bottom: 10px;">✨</span>Belum ada impian.</div>`;
+    clearBusy(container);
+    if (wishlists.length === 0) {
+        container.innerHTML = '<div class="empty-state">Belum ada wishlist. Tulis satu barang yang lagi lu incer.</div>';
+        return;
+    }
 
-    wishlists.forEach(wish => {
+    container.innerHTML = wishlists.map(wish => {
         let percent = wish.targetAmount > 0 ? (wish.currentAmount / wish.targetAmount) * 100 : 0;
         if (percent > 100) percent = 100;
-        let plansHtml = '';
-        if(wish.plans && wish.plans.length > 0) {
-            plansHtml = '<ul class="plan-list">';
-            wish.plans.slice(0, 3).forEach(plan => plansHtml += `<li ${plan.done ? 'class="done"' : ''}>${plan.text}</li>`);
-            plansHtml += '</ul>';
-        }
-        const barColor = percent >= 100 ? 'var(--ocean-blue)' : 'var(--matcha-green)';
-        container.innerHTML += `
-            <div class="box" style="border-top: 4px solid ${barColor};" onclick="openEditModal('${wish.id}')">
-                <div class="box-header">
-                    <h3 style="font-size: 18px;">${percent >= 100 ? '🎉' : '🎯'} ${wish.title}</h3>
-                    <span class="price-badge">${formatRp(wish.targetAmount)}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <p style="font-size: 13px; font-weight:600;">Progress: ${formatRp(wish.currentAmount)}</p>
-                    <p style="font-size: 13px; font-weight: bold; color: ${barColor};">${Math.floor(percent)}%</p>
-                </div>
-                <div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${percent}%; background: ${barColor};"></div></div>
-                ${plansHtml}
-            </div>`;
-    });
+        const done = percent >= 100;
+        const plansHtml = wish.plans.length
+            ? '<ul class="plan-list">' + wish.plans.slice(0, 3).map(plan => `<li${plan.done ? ' class="done"' : ''}>${esc(plan.text)}</li>`).join('') + '</ul>'
+            : '';
+        return `
+        <article class="wish-card${done ? ' done' : ''}">
+            <div class="box-header">
+                <h2><button type="button" class="card-link" onclick="openEditModal('${esc(wish.id)}')">${esc(wish.title)}</button></h2>
+                <span class="price-badge">${formatRpShort(wish.targetAmount)}</span>
+            </div>
+            <div class="wish-progress">
+                <span>${formatRpShort(wish.currentAmount)} terkumpul</span>
+                <span class="${done ? 'done-tag' : 'text-green'}">${done ? 'Tercapai' : Math.floor(percent) + '%'}</span>
+            </div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill${done ? ' done' : ''}" style="width: ${percent}%;"></div></div>
+            ${plansHtml}
+        </article>`;
+    }).join('');
 }
 
-window.openAddModal = function() {
-    document.getElementById('wish-title').value = ''; document.getElementById('wish-target').value = '';
-    document.getElementById('wish-current').value = '0'; document.getElementById('wish-plans').value = '';
+function openAddModal() {
+    document.getElementById('wish-title').value = '';
+    document.getElementById('wish-target').value = '';
+    document.getElementById('wish-current').value = '0';
+    document.getElementById('wish-plans').value = '';
     openModal('addWishModal');
 }
 
-window.saveNewWish = async function() {
-    const title = document.getElementById('wish-title').value;
+async function saveNewWish() {
+    const title = document.getElementById('wish-title').value.trim();
     const targetAmount = parseInt(document.getElementById('wish-target').value);
     const currentAmount = parseInt(document.getElementById('wish-current').value) || 0;
     const plansText = document.getElementById('wish-plans').value;
 
-    if(!title || isNaN(targetAmount)) return alert("Title dan Target wajib diisi!");
+    if (!title || isNaN(targetAmount)) { showToast('Nama barang dan target dana wajib diisi.', true); return; }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    let plansArray = plansText.trim() !== '' ? plansText.split('\n').filter(p => p.trim() !== '').map((text, index) => ({ id: index, text: text.trim(), done: false })) : [];
+    const plansArray = plansText.split('\n').map(p => p.trim()).filter(Boolean).map((text, index) => ({ id: index, text, done: false }));
 
-    const payload = { 
-        title: title, target_amount: targetAmount, current_amount: currentAmount, 
-        plans: JSON.stringify(plansArray), user_id: user ? user.id : null 
+    const btn = document.getElementById('btn-save-wish');
+    btn.disabled = true;
+    const user = await getCurrentUser();
+    const payload = {
+        title, target_amount: targetAmount, current_amount: currentAmount,
+        plans: JSON.stringify(plansArray), user_id: user ? user.id : null
     };
+    const { data, error } = await supabaseClient.from('wishlists').insert([payload]).select();
+    btn.disabled = false;
 
-    const { data: dbData, error } = await supabaseClient.from('wishlists').insert([payload]).select();
-    if (error) return alert("Gagal simpan wishlist!");
-
-    if (dbData && dbData.length > 0) {
-        const w = dbData[0];
-        wishlists.push({ id: w.id, title: w.title, targetAmount: w.target_amount, currentAmount: w.current_amount, plans: plansArray });
+    if (error) { showToast('Gagal nyimpen wishlist.', true); return; }
+    if (data && data.length > 0) {
+        const w = data[0];
+        wishlists.push({ id: w.id, title: w.title, targetAmount: Number(w.target_amount) || 0, currentAmount: Number(w.current_amount) || 0, plans: plansArray });
     }
-
-    localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
-    closeModal('addWishModal'); renderWishlists();
+    showToast('Wishlist ditambahin.');
+    closeModal('addWishModal');
+    renderWishlists();
 }
 
-window.openEditModal = function(id) {
+function openEditModal(id) {
     const wish = wishlists.find(w => w.id == id);
-    if(!wish) return;
-    activeEditId = id;
-    document.getElementById('edit-modal-title').innerText = wish.title;
+    if (!wish) return;
+    activeEditId = wish.id;
+    document.getElementById('edit-modal-title').textContent = wish.title;
     document.getElementById('edit-wish-current').value = wish.currentAmount;
-    document.getElementById('edit-wish-target-hint').innerText = `Target total: ${formatRpFull(wish.targetAmount)}`;
-    
+    document.getElementById('edit-wish-target-hint').textContent = 'Target total: ' + formatRp(wish.targetAmount);
+
     const checklist = document.getElementById('edit-wish-plans');
-    checklist.innerHTML = '';
-    if(wish.plans && wish.plans.length > 0) {
-        wish.plans.forEach(plan => { checklist.innerHTML += `<label class="checklist-item"><input type="checkbox" id="plan-${plan.id}" ${plan.done ? 'checked' : ''}><span>${plan.text}</span></label>`; });
-    } else checklist.innerHTML = '<p style="font-size: 12px; color: var(--text-muted);">Tidak ada action plan.</p>';
+    checklist.innerHTML = wish.plans.length
+        ? wish.plans.map(plan => `<label class="checklist-item"><input type="checkbox" id="plan-${esc(plan.id)}" ${plan.done ? 'checked' : ''}><span>${esc(plan.text)}</span></label>`).join('')
+        : '<p class="form-hint">Belum ada rencana.</p>';
     openModal('editWishModal');
 }
 
-window.saveEditWish = async function() {
-    const wishIndex = wishlists.findIndex(w => w.id == activeEditId);
-    if(wishIndex === -1) return;
-    
-    wishlists[wishIndex].currentAmount = parseInt(document.getElementById('edit-wish-current').value) || 0;
-    if(wishlists[wishIndex].plans) {
-        wishlists[wishIndex].plans.forEach(plan => { const cb = document.getElementById(`plan-${plan.id}`); if(cb) plan.done = cb.checked; });
-    }
+async function saveEditWish() {
+    const wish = wishlists.find(w => w.id == activeEditId);
+    if (!wish) return;
 
-    // Save update ke cloud
-    const payload = {
-        current_amount: wishlists[wishIndex].currentAmount,
-        plans: JSON.stringify(wishlists[wishIndex].plans)
-    };
-    await supabaseClient.from('wishlists').update(payload).eq('id', activeEditId);
+    const newAmount = parseInt(document.getElementById('edit-wish-current').value) || 0;
+    const newPlans = wish.plans.map(plan => {
+        const cb = document.getElementById('plan-' + plan.id);
+        return { ...plan, done: cb ? cb.checked : plan.done };
+    });
 
-    localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
-    closeModal('editWishModal'); renderWishlists();
+    const btn = document.getElementById('btn-update-wish');
+    btn.disabled = true;
+    const { error } = await supabaseClient.from('wishlists')
+        .update({ current_amount: newAmount, plans: JSON.stringify(newPlans) })
+        .eq('id', wish.id);
+    btn.disabled = false;
+
+    if (error) { showToast('Gagal update wishlist.', true); return; }
+    wish.currentAmount = newAmount;
+    wish.plans = newPlans;
+    showToast('Progres diupdate.');
+    closeModal('editWishModal');
+    renderWishlists();
 }
 
-let confirmAction = null; 
-window.customConfirm = function(message, actionCallback) { document.getElementById('confirm-msg').innerText = message; confirmAction = actionCallback; document.getElementById('confirmModal').style.display = 'flex'; }
-window.executeConfirm = function() { if(confirmAction) { confirmAction(); confirmAction = null; } closeModal('confirmModal'); }
-
-window.triggerDeleteWish = function() {
-    customConfirm(`Yakin mau menghapus wishlist ini?`, async () => {
+function triggerDeleteWish() {
+    customConfirm('Yakin mau hapus wishlist ini?', async () => {
         const { error } = await supabaseClient.from('wishlists').delete().eq('id', activeEditId);
-        if(error) return alert("Gagal hapus wishlist!");
-
+        if (error) { showToast('Gagal hapus wishlist.', true); return; }
         wishlists = wishlists.filter(w => w.id != activeEditId);
-        localStorage.setItem('finzen_wishlists', JSON.stringify(wishlists));
-        closeModal('editWishModal'); renderWishlists();
+        showToast('Wishlist dihapus.');
+        closeModal('editWishModal');
+        renderWishlists();
     });
 }
 
-window.openModal = function(modalId) { document.getElementById(modalId).style.display = 'flex'; }
-window.closeModal = function(modalId) { document.getElementById(modalId).style.display = 'none'; }
-window.onclick = function(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = "none"; }
-window.onload = () => { if(typeof checkAuth === 'function') checkAuth(); fetchCloudWishlists(); };
+document.addEventListener('DOMContentLoaded', async () => {
+    showLoading('wishlist-container');
+    if (await requireAuth()) fetchCloudWishlists();
+});
