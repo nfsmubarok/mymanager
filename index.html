@@ -13,33 +13,54 @@
 <body>
     <a class="skip-link" href="#main">Langsung ke konten</a>
 
-    <aside class="sidebar">
-        <div class="logo" lang="ja">マネージャー</div>
-        <nav aria-label="Menu utama">
-            <div class="menu-group">
-                <p class="menu-title">Harian</p>
-                <a href="index.html" class="menu-item active" aria-current="page">Keuangan</a>
-                <a href="schedule.html" class="menu-item">Jadwal &amp; tugas</a>
-                <a href="wishlist.html" class="menu-item">Wishlist</a>
-            </div>
-            <div class="menu-group">
-                <p class="menu-title">Santai &amp; catatan</p>
-                <a href="hobbies.html" class="menu-item">Hobi</a>
-                <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-                <a href="minigames.html" class="menu-item">Sudoku</a>
-            </div>
-        </nav>
-        <div class="sidebar-footer">
-            <button type="button" class="btn-logout" id="btn-logout">Keluar</button>
+    <canvas class="petals" aria-hidden="true"></canvas>
+
+    <nav class="rail" aria-label="Menu utama">
+        <a href="index.html" class="rail-logo" lang="ja" aria-label="マネージャー, ke halaman Keuangan">マネージャー</a>
+        <div class="rail-links">
+            <a href="index.html" class="rail-link" aria-current="page" aria-label="Keuangan" data-tip="Keuangan"><svg aria-hidden="true"><use href="img/icons.svg#money"/></svg></a>
+            <a href="schedule.html" class="rail-link" aria-label="Jadwal &amp; tugas" data-tip="Jadwal &amp; tugas"><svg aria-hidden="true"><use href="img/icons.svg#calendar"/></svg></a>
+            <a href="wishlist.html" class="rail-link" aria-label="Wishlist" data-tip="Wishlist"><svg aria-hidden="true"><use href="img/icons.svg#ema"/></svg></a>
+            <a href="hobbies.html" class="rail-link" aria-label="Hobi" data-tip="Hobi"><svg aria-hidden="true"><use href="img/icons.svg#kendama"/></svg></a>
+            <a href="dumpspaces.html" class="rail-link" aria-label="Dumpspaces" data-tip="Dumpspaces"><svg aria-hidden="true"><use href="img/icons.svg#scroll"/></svg></a>
+            <a href="minigames.html" class="rail-link" aria-label="Sudoku" data-tip="Sudoku"><svg aria-hidden="true"><use href="img/icons.svg#soroban"/></svg></a>
         </div>
-    </aside>
+        <div class="rail-tools">
+            <button type="button" class="tool-btn" id="btn-motion" aria-label="Gerak" data-tip="Gerak"><svg aria-hidden="true"><use href="img/icons.svg#wind"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-petals" aria-label="Kelopak" data-tip="Kelopak"><svg aria-hidden="true"><use href="img/icons.svg#petal"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-theme" aria-label="Ganti ke mode malam" data-tip="Mode malam"><svg aria-hidden="true"><use href="img/icons.svg#moon"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-logout" aria-label="Keluar" data-tip="Keluar"><svg aria-hidden="true"><use href="img/icons.svg#noren"/></svg></button>
+        </div>
+    </nav>
+
+    <header class="mobile-bar">
+        <a href="index.html" class="mobile-logo" lang="ja">マネージャー</a>
+        <div class="mobile-tools">
+            <button type="button" class="tool-btn" id="btn-motion-m" aria-label="Gerak"><svg aria-hidden="true"><use href="img/icons.svg#wind"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-petals-m" aria-label="Kelopak"><svg aria-hidden="true"><use href="img/icons.svg#petal"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-theme-m" aria-label="Ganti ke mode malam"><svg aria-hidden="true"><use href="img/icons.svg#moon"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-logout-m" aria-label="Keluar"><svg aria-hidden="true"><use href="img/icons.svg#noren"/></svg></button>
+        </div>
+    </header>
+
+    <nav class="tabbar" aria-label="Menu utama">
+        <a href="index.html" class="tab" aria-current="page"><svg aria-hidden="true"><use href="img/icons.svg#money"/></svg><span>Keuangan</span></a>
+        <a href="schedule.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#calendar"/></svg><span>Jadwal</span></a>
+        <a href="wishlist.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#ema"/></svg><span>Wishlist</span></a>
+        <a href="hobbies.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#kendama"/></svg><span>Hobi</span></a>
+        <a href="dumpspaces.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#scroll"/></svg><span>Dumps</span></a>
+        <a href="minigames.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#soroban"/></svg><span>Sudoku</span></a>
+    </nav>
 
     <main class="main-content" id="main">
-        <header class="header">
-            <div>
-                <h1>Keuangan <span class="jp" lang="ja" aria-hidden="true">お金</span></h1>
-                <p>こんにちは. Atur duit lu pelan-pelan, ga usah buru-buru.</p>
+        <span class="watermark" lang="ja" aria-hidden="true">金</span>
+        <header class="page-head">
+            <div class="page-title">
+                <p class="eyebrow" id="page-eyebrow">Keuangan</p>
+                <h1>Keuangan</h1>
+                <p class="page-lede">Atur duit pelan-pelan, ga usah buru-buru.</p>
             </div>
+            <span class="tategaki" lang="ja" aria-hidden="true">静かに数える</span>
             <button type="button" class="btn-add" onclick="openModal('transactionModal')">+ Catat transaksi</button>
         </header>
 
@@ -181,6 +202,7 @@
     <script src="js/theme.js"></script>
     <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/shell.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
 </body>

@@ -108,3 +108,92 @@ button:disabled, select:disabled, input:disabled, textarea:disabled { cursor: no
 html[data-motion="calm"] *, html[data-motion="calm"] *::before, html[data-motion="calm"] *::after {
     animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;
 }
+
+/* ---------- 4. Shell: rail (desktop) ---------- */
+.rail {
+    position: fixed; inset: 0 auto 0 0; width: var(--rail-w); z-index: 50;
+    background: var(--card); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; padding: 20px 0 16px; gap: 22px;
+}
+.rail-logo {
+    writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 800; font-size: 17px;
+    letter-spacing: 0.32em; color: var(--ink); text-decoration: none; padding: 4px 0;
+}
+.rail-links, .rail-tools { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rail-tools { margin-top: auto; gap: 2px; }
+.rail-link, .tool-btn {
+    position: relative; width: 46px; height: 46px; display: grid; place-items: center;
+    border-radius: var(--r-md); color: var(--muted); background: none; border: none;
+    transition: color .15s, background-color .15s;
+}
+.rail-link svg { width: 24px; height: 24px; }
+.tool-btn svg { width: 20px; height: 20px; }
+.rail-link:hover, .tool-btn:hover { color: var(--ink); background: var(--ai-tint); }
+.rail-link:active, .tool-btn:active { background: var(--line); }
+.rail-link[aria-current="page"] { color: var(--ai); }
+.rail-link[aria-current="page"]::before {
+    content: ""; position: absolute; left: -13px; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--hanko);
+}
+.tool-btn[aria-pressed="true"] { color: var(--ai); }
+
+.tooltip {
+    position: fixed; z-index: 3000; transform: translateY(-50%); pointer-events: none;
+    background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 500;
+    padding: 5px 10px; border-radius: var(--r-sm); white-space: nowrap;
+    opacity: 0; transition: opacity .12s;
+}
+.tooltip.show { opacity: 1; }
+
+/* ---------- 5. Main area + page head ---------- */
+.main-content {
+    position: relative; z-index: 1; margin-left: var(--rail-w);
+    padding: 40px clamp(20px, 4vw, 56px) 64px; max-width: calc(1200px + var(--rail-w)); min-height: 100vh;
+}
+.watermark {
+    position: absolute; top: -10px; right: clamp(8px, 3vw, 40px); z-index: -1; pointer-events: none; user-select: none;
+    font-family: var(--font-display); font-weight: 800; font-size: clamp(180px, 24vw, 340px); line-height: 1;
+    color: var(--ai); opacity: .06;
+}
+.page-head { display: grid; grid-template-columns: 1fr auto auto; align-items: end; gap: 20px 28px; margin-bottom: 36px; }
+.eyebrow { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .06em; margin-bottom: 6px; }
+.page-head h1 { font-size: clamp(40px, 5.2vw, 60px); line-height: 1.02; }
+.page-lede { color: var(--muted); margin-top: 10px; max-width: 46ch; }
+.tategaki {
+    writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 700; font-size: 15px;
+    letter-spacing: .42em; color: var(--ai); opacity: .55; align-self: start;
+}
+.petals { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* ---------- 6. Shell: HP ---------- */
+.mobile-bar, .tabbar { display: none; }
+@media (max-width: 767px) {
+    .rail { display: none; }
+    .mobile-bar {
+        display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
+        padding: 8px 12px 8px 16px; background: var(--card); border-bottom: 1px solid var(--line);
+    }
+    .mobile-logo { font-family: var(--font-display); font-weight: 800; font-size: 17px; letter-spacing: .18em; color: var(--ink); text-decoration: none; }
+    .mobile-tools { display: flex; gap: 2px; }
+    .mobile-tools .tool-btn { width: 44px; height: 44px; }
+    .tabbar {
+        display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+        background: var(--card); border-top: 1px solid var(--line); padding: 4px 2px calc(4px + env(safe-area-inset-bottom));
+    }
+    .tab {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px;
+        color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 500; position: relative;
+    }
+    .tab svg { width: 22px; height: 22px; }
+    .tab[aria-current="page"] { color: var(--ai); }
+    .tab[aria-current="page"]::before { content: ""; position: absolute; top: -4px; width: 22px; height: 3px; border-radius: 2px; background: var(--hanko); }
+    .main-content { margin-left: 0; padding: 24px 16px calc(96px + env(safe-area-inset-bottom)); }
+    .page-head { grid-template-columns: 1fr auto; margin-bottom: 24px; }
+    .page-head .btn-add { grid-column: 1 / -1; width: 100%; }
+    .tategaki { font-size: 13px; }
+    .watermark { font-size: 160px; top: 40px; }
+}
+
+/* ---------- 7. Transisi antar halaman ---------- */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+html[data-motion="calm"]::view-transition-old(root), html[data-motion="calm"]::view-transition-new(root) { animation: none; }
