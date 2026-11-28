@@ -161,7 +161,8 @@ r;
   - Collapses to one column under 1100px.
 - Actions:
   - `#daily-schedule-list`: `schedule-edit` and `schedule-delete`.
-  - `#task-list`: `task-toggle` (checkbox, change) and `task-delete`.
+  - `#task-list`: `task-toggle` (checkbox with `data-action="task-toggle"` and `data-id`, on change) and `task-delete`.
+  - The tasks section is `<section class="paper" id="task-paper">`.
 - `toggleTask` stamps `#task-paper` when the Global Constraints rule is met.
 - `openAddFromDaily` and `editSchedule` now `await closeModal('dailyModal')` before `openModal(...)`.
 - First load: `Motion.stagger` on day cells with events, then the today list rows.
