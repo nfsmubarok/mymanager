@@ -91,13 +91,19 @@ function openModal(modalId) {
     if (typeof window.onModalOpen === 'function') window.onModalOpen(modalId);
     modalReturnFocus[modalId] = document.activeElement;
     modal.classList.add('open');
+    if (window.Motion) Motion.modalIn(modal, modalReturnFocus[modalId]);
     const target = modal.querySelector('[autofocus], input:not([type="hidden"]):not([disabled]), select, textarea, button:not(.close-btn)') || modal.querySelector('button');
     if (target) setTimeout(() => target.focus(), 0);
 }
 
-function closeModal(modalId) {
+async function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (!modal) return;
+    if (!modal || !modal.classList.contains('open') || modal.dataset.closing) return;
+    if (window.Motion) {
+        modal.dataset.closing = '1';
+        await Motion.modalOut(modal);
+        delete modal.dataset.closing;
+    }
     modal.classList.remove('open');
     if (typeof window.onModalClose === 'function') window.onModalClose(modalId);
     const back = modalReturnFocus[modalId];

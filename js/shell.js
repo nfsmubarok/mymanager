@@ -62,6 +62,15 @@
             Theme.onChange(syncTheme);
             onTool('btn-theme', b => Theme.toggle(b));
         }
+        if (window.Motion) {
+            const syncMotion = () => {
+                setTool('btn-motion', { label: Motion.full ? 'Gerak: penuh' : 'Gerak: hemat' });
+                ['btn-motion', 'btn-motion-m'].forEach(id => { const b = document.getElementById(id); if (b) b.setAttribute('aria-pressed', String(Motion.full)); });
+            };
+            syncMotion();
+            Motion.onChange(syncMotion);
+            onTool('btn-motion', () => Motion.setFull(!Motion.full));
+        }
         const m = document.getElementById('btn-logout-m');
         if (m && typeof logout === 'function') m.addEventListener('click', logout);
     });

@@ -193,6 +193,17 @@ html[data-motion="calm"] *, html[data-motion="calm"] *::before, html[data-motion
     .watermark { font-size: 160px; top: 40px; }
 }
 
+/* ---------- Gerak: stempel hanko + noda tinta modal ---------- */
+.hanko-seal {
+    position: absolute; right: 18px; bottom: 16px; z-index: 2; pointer-events: none;
+    width: 64px; height: 64px; display: grid; place-items: center;
+    border: 3px solid var(--hanko-seal); border-radius: var(--r-md); color: var(--hanko-seal);
+    font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1;
+    transform: rotate(-8deg); opacity: 0;
+}
+.ink-blot { position: fixed; border-radius: 50%; background: var(--ai); opacity: 0; pointer-events: none; z-index: 0; filter: blur(2px); }
+.modal-overlay .ink-blot { background: color-mix(in srgb, var(--ai) 22%, transparent); }
+
 /* ---------- 7. Transisi antar halaman ---------- */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
