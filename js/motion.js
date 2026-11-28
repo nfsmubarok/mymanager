@@ -54,10 +54,16 @@
         // Angka naik dari 0 ke value
         countUp(el, value, format) {
             if (!el) return;
+            this.stop(el);
             const g = gs();
             if (!g) { el.textContent = format(value); return; }
             const o = { v: 0 };
-            g.to(o, { v: value, duration: 1.4, ease: 'power3.out', onUpdate: () => { el.textContent = format(Math.round(o.v)); }, onComplete: () => { el.textContent = format(value); } });
+            el.__zenTween = g.to(o, { v: value, duration: 1.4, ease: 'power3.out', onUpdate: () => { el.textContent = format(Math.round(o.v)); }, onComplete: () => { el.textContent = format(value); el.__zenTween = null; } });
+        },
+
+        // Hentiin count-up yang masih jalan (dipanggil sebelum nulis angka final)
+        stop(el) {
+            if (el && el.__zenTween) { el.__zenTween.kill(); el.__zenTween = null; }
         },
 
         // Baris/kartu muncul berurutan

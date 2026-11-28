@@ -12,8 +12,20 @@ const categoryLabels = {
 };
 function categoryLabel(cat) { return categoryLabels[cat] || cat || 'Lainnya'; }
 
-// Warna chart diturunin dari palet zen (matcha, sakura, ocean + versi muda)
-const chartColors = ['#5E6B45', '#A64B52', '#506870', '#8F9779', '#D98C8C', '#7B9095', '#C9CDB8'];
+// Warna chart dibaca dari token CSS, jadi ikut ganti pas mode washi/sumi berubah
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function chartColors() {
+    const ai = cssVar('--ai'), hanko = cssVar('--hanko'), muted = cssVar('--muted'), card = cssVar('--card');
+    // Campur hex manual: canvas Chart.js belum tentu ngerti color-mix()
+    const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const mix = (c, pct) => {
+        const a = rgb(c), b = rgb(card), t = pct / 100;
+        return '#' + a.map((v, i) => Math.round(v * t + b[i] * (1 - t)).toString(16).padStart(2, '0')).join('');
+    };
+    return [ai, hanko, muted, mix(ai, 55), mix(hanko, 55), mix(muted, 45), mix(ai, 28)];
+}
+// Count-up dan stagger cuma di load pertama, bukan tiap render ulang setelah simpan
+let firstPaint = true;
 
 const LIST_IDS = ['recent-tx-list', 'wallets-list', 'all-tx-list'];
 const AMOUNT_IDS = ['display-current-balance', 'display-total-savings', 'display-total-income', 'display-total-expense', 'display-net'];
@@ -42,7 +54,7 @@ function setChartState(type, message) {
 }
 
 function txSign(type) { return type === 'expense' ? '-' : (type === 'income' ? '+' : ''); }
-function txColorClass(type) { return type === 'expense' ? 'text-red' : (type === 'income' ? 'text-green' : 'text-blue'); }
+function txColorClass(type) { return type === 'expense' ? 'out' : (type === 'income' ? 'in' : 'move'); }
 function walletName(id) { const w = wallets.find(w => w.id === id); return w ? w.name : 'Dompet terhapus'; }
 
 // --- RENDER DASHBOARD ---
@@ -88,29 +100,39 @@ function updateDashboard() {
 
     wallets.forEach(w => totalSavings += w.realBalance);
 
+    const monthName = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const eyebrow = document.getElementById('page-eyebrow');
+    if (eyebrow) eyebrow.textContent = 'Keuangan · ' + monthName;
     const monthHeading = document.getElementById('month-heading');
-    if (monthHeading) monthHeading.textContent = 'Bulan ini, ' + now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    if (monthHeading) monthHeading.textContent = 'Bulan ini';
 
-    updateCurrentBalanceDisplay();
-    setAmount('display-total-savings', formatRp(totalSavings));
-    setAmount('display-total-income', formatRp(totalIncome));
-    setAmount('display-total-expense', formatRp(totalExpense));
+    const animate = firstPaint;
+    updateCurrentBalanceDisplay(animate);
+    setAmount('display-total-savings', totalSavings, formatRp, animate);
+    setAmount('display-total-income', totalIncome, n => '+' + formatRp(n), animate);
+    setAmount('display-total-expense', totalExpense, n => '-' + formatRp(n), animate);
     const net = totalIncome - totalExpense;
-    setAmount('display-net', (net > 0 ? '+' : '') + formatRp(net));
+    setAmount('display-net', net, n => (net > 0 ? '+' : '') + formatRp(n), animate);
     const netEl = document.getElementById('display-net');
-    if (netEl) netEl.className = net < 0 ? 'text-red' : 'text-green';
+    if (netEl) netEl.className = 'amount ' + (net < 0 ? 'out' : 'in');
 
     renderChart(expensesByCategory, totalExpense);
     renderWallets();
     renderRecent();
     renderAllTransactions();
+
+    if (animate && window.Motion) {
+        Motion.stagger(document.querySelectorAll('#recent-tx-list .ledger-row, #all-tx-list .ledger-row, #wallets-list .ledger-row'));
+    }
+    firstPaint = false;
 }
 
-function setAmount(id, text) {
+function setAmount(id, value, format, animate) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = text;
     el.classList.remove('is-loading');
+    if (animate && window.Motion) Motion.countUp(el, value, format);
+    else { if (window.Motion) Motion.stop(el); el.textContent = format(value); }
 }
 
 function renderChart(expensesByCategory, totalExpense) {
@@ -133,16 +155,17 @@ function renderChart(expensesByCategory, totalExpense) {
         type: 'doughnut',
         data: {
             labels,
-            datasets: [{ data: Object.values(expensesByCategory), backgroundColor: chartColors, borderWidth: 2, borderColor: '#ffffff' }]
+            datasets: [{ data: Object.values(expensesByCategory), backgroundColor: chartColors(), borderWidth: 2, borderColor: cssVar('--card') }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+            cutout: '62%',
+            animation: (window.Motion ? Motion.full : true) ? { duration: 500 } : false,
             plugins: {
                 legend: {
                     position: 'right',
-                    labels: { font: { size: 12 }, color: '#5F6B78', usePointStyle: true }
+                    labels: { font: { size: 13, family: "'Zen Kaku Gothic New', sans-serif" }, color: cssVar('--muted'), usePointStyle: true, boxWidth: 8, padding: 12 }
                 },
                 tooltip: {
                     callbacks: {
@@ -167,12 +190,14 @@ function renderWallets() {
         return;
     }
     el.innerHTML = wallets.map(w => `
-        <div class="wallet-sub-box">
-            <div>
-                <p class="wallet-name">${esc(w.name)}</p>
-                <p class="wallet-balance">${formatRp(w.realBalance)}</p>
+        <div class="ledger-row">
+            <div class="ledger-main">
+                <p class="ledger-title">${esc(w.name)}</p>
             </div>
-            <button type="button" class="btn-text danger" onclick="deleteWallet('${esc(w.id)}')" aria-label="Hapus dompet ${esc(w.name)}">Hapus</button>
+            <div class="ledger-side">
+                <p class="amount">${formatRp(w.realBalance)}</p>
+                <button type="button" class="btn-text danger" onclick="deleteWallet('${esc(w.id)}')" aria-label="Hapus dompet ${esc(w.name)}">Hapus</button>
+            </div>
         </div>`).join('');
 }
 
@@ -186,22 +211,21 @@ function renderRecent() {
         return;
     }
     el.innerHTML = recent.map(tx => `
-        <div class="transaction-item">
-            <div class="tx-main">
-                <p class="tx-desc">${esc(tx.desc)}</p>
-                <p class="tx-meta">${esc(walletName(tx.walletId))} · ${esc(categoryLabel(tx.category))} · ${formatDate(tx.date)}</p>
+        <div class="ledger-row">
+            <div class="ledger-main">
+                <p class="ledger-title">${esc(tx.desc)}</p>
+                <p class="ledger-meta">${esc(walletName(tx.walletId))} · ${esc(categoryLabel(tx.category))} · ${formatDate(tx.date)}</p>
             </div>
-            <p class="tx-amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
+            <p class="amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
         </div>`).join('');
 }
 
-function updateCurrentBalanceDisplay() {
+function updateCurrentBalanceDisplay(animate) {
     const select = document.getElementById('main-wallet-select');
     const display = document.getElementById('display-current-balance');
     if (!select || !display) return;
     const w = wallets.find(w => w.id === select.value);
-    display.textContent = w ? formatRp(w.realBalance) : 'Rp 0';
-    display.classList.remove('is-loading');
+    setAmount('display-current-balance', w ? w.realBalance : 0, formatRp, animate === true);
 }
 
 function renderAllTransactions() {
@@ -225,14 +249,14 @@ function renderAllTransactions() {
             ? `<span class="chip">${esc(walletName(tx.walletId))}</span> ke <span class="chip">${esc(walletName(tx.to_wallet_id))}</span> · ${formatDate(tx.date)}`
             : `<span class="chip">${esc(walletName(tx.walletId))}</span> · ${esc(categoryLabel(tx.category))} · ${formatDate(tx.date)}`;
         return `
-        <div class="transaction-item">
-            <div class="tx-main">
-                <p class="tx-desc">${esc(tx.desc)}</p>
-                <p class="tx-meta">${meta}${tx.note ? ' · ' + esc(tx.note) : ''}</p>
+        <div class="ledger-row">
+            <div class="ledger-main">
+                <p class="ledger-title">${esc(tx.desc)}</p>
+                <p class="ledger-meta">${meta}${tx.note ? ' · ' + esc(tx.note) : ''}</p>
             </div>
-            <div class="tx-side">
-                <p class="tx-amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
-                <div class="tx-actions">
+            <div class="ledger-side">
+                <p class="amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
+                <div class="row-actions">
                     <button type="button" class="btn-text" onclick="editTransaction('${esc(tx.id)}')" aria-label="Edit ${esc(tx.desc)}">Edit</button>
                     <button type="button" class="btn-text danger" onclick="triggerDeleteTx('${esc(tx.id)}')" aria-label="Hapus ${esc(tx.desc)}">Hapus</button>
                 </div>
@@ -296,5 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterEl = document.getElementById('filter-month');
     if (filterEl) filterEl.value = String(new Date().getMonth());
     showDashboardLoading();
+    // Ganti mode: render ulang (tanpa animasi) supaya warna chart ikut token baru
+    if (window.Theme) Theme.onChange(() => { if (!firstPaint) updateDashboard(); });
     if (await requireAuth()) fetchCloudData();
 });

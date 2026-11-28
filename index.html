@@ -64,70 +64,68 @@
             <button type="button" class="btn-add" onclick="openModal('transactionModal')">+ Catat transaksi</button>
         </header>
 
-        <section class="summary" aria-label="Ringkasan saldo">
-            <div class="summary-main">
-                <div class="summary-label">
-                    <label for="main-wallet-select">Saldo dompet</label>
-                    <select id="main-wallet-select" class="wallet-select" onchange="updateCurrentBalanceDisplay()"></select>
-                </div>
-                <p class="summary-amount" id="display-current-balance" aria-live="polite">Memuat...</p>
-                <p class="summary-foot">Total semua dompet: <strong id="display-total-savings">Memuat...</strong></p>
+        <!-- Hero: saldo dompet terpilih sebagai fokus utama, langsung di atas kertas tanpa kartu -->
+        <section class="money-hero" aria-label="Saldo">
+            <div class="hero-label">
+                <label for="main-wallet-select">Saldo</label>
+                <select id="main-wallet-select" class="wallet-select" onchange="updateCurrentBalanceDisplay()"></select>
             </div>
-            <div class="summary-month">
-                <h2 id="month-heading">Bulan ini</h2>
-                <div class="month-row"><span>Masuk</span><strong class="text-green" id="display-total-income">Memuat...</strong></div>
-                <div class="month-row"><span>Keluar</span><strong class="text-red" id="display-total-expense">Memuat...</strong></div>
-                <div class="month-row"><span>Selisih</span><strong id="display-net">Memuat...</strong></div>
-            </div>
+            <p class="hero-amount display" id="display-current-balance" aria-live="polite">Memuat...</p>
+            <p class="hero-foot">Total semua dompet <strong class="num" id="display-total-savings">Memuat...</strong></p>
         </section>
 
-        <div class="content-grid">
-            <div class="stack">
-                <section class="box" aria-labelledby="recent-heading">
-                    <div class="box-header"><h2 id="recent-heading">Transaksi terakhir</h2></div>
-                    <div id="recent-tx-list"></div>
-                </section>
-
-                <section class="box" aria-labelledby="stats-heading">
-                    <div class="box-header"><h2 id="stats-heading">Pengeluaran bulan ini per kategori</h2></div>
+        <div class="money-grid">
+            <div class="money-side">
+                <section class="paper" aria-labelledby="month-heading">
+                    <h2 id="month-heading">Bulan ini</h2>
+                    <div class="ledger">
+                        <div class="ledger-row"><span class="ledger-title">Masuk</span><strong class="amount in" id="display-total-income">Memuat...</strong></div>
+                        <div class="ledger-row"><span class="ledger-title">Keluar</span><strong class="amount out" id="display-total-expense">Memuat...</strong></div>
+                        <div class="ledger-row total"><span class="ledger-title">Selisih</span><strong class="amount" id="display-net">Memuat...</strong></div>
+                    </div>
+                    <h3 class="sub-title" id="stats-heading">Pengeluaran per kategori</h3>
                     <div class="chart-wrap">
-                        <canvas id="expenseChart" role="img" aria-label="Diagram pengeluaran bulan ini per kategori" width="400" height="220"></canvas>
+                        <canvas id="expenseChart" role="img" aria-labelledby="stats-heading" width="360" height="200"></canvas>
                         <div id="chart-state" class="state" hidden></div>
                     </div>
                 </section>
-            </div>
 
-            <div class="stack">
-                <section class="box" aria-labelledby="wallets-heading">
-                    <div class="box-header">
-                        <h2 id="wallets-heading">Dompet</h2>
-                        <button type="button" class="btn-small" onclick="openModal('walletModal')">+ Tambah</button>
-                    </div>
-                    <div id="wallets-list"></div>
+                <section class="paper" aria-labelledby="wallets-heading">
+                    <div class="paper-head"><h2 id="wallets-heading">Dompet</h2><button type="button" class="btn-small" onclick="openModal('walletModal')">+ Tambah</button></div>
+                    <div id="wallets-list" class="ledger"></div>
                 </section>
 
-                <section class="box" aria-labelledby="transfer-heading">
+                <section class="transfer-note" aria-labelledby="transfer-heading">
                     <h2 id="transfer-heading">Pindahin saldo</h2>
-                    <p class="box-note">Dari satu rekening atau dompet ke yang lain.</p>
-                    <button type="button" class="btn-submit btn-secondary btn-block" onclick="openModal('transferModal')">Bikin transfer</button>
+                    <p>Dari satu rekening atau dompet ke yang lain.</p>
+                    <button type="button" class="btn btn-outline" onclick="openModal('transferModal')">Bikin transfer</button>
+                </section>
+            </div>
+
+            <div class="money-main">
+                <section class="paper ledger-paper" aria-labelledby="recent-heading">
+                    <h2 id="recent-heading">Buku kas</h2>
+                    <div id="recent-tx-list" class="ledger"></div>
+                </section>
+
+                <section class="paper ledger-paper" aria-labelledby="all-heading">
+                    <div class="paper-head">
+                        <h2 id="all-heading">Semua transaksi</h2>
+                        <span class="filter">
+                            <label class="visually-hidden" for="filter-month">Filter bulan</label>
+                            <select id="filter-month" class="form-input" onchange="renderAllTransactions()">
+                                <option value="all">Semua bulan</option>
+                                <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                                <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                                <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                                <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
+                            </select>
+                        </span>
+                    </div>
+                    <div id="all-tx-list" class="ledger"></div>
                 </section>
             </div>
         </div>
-
-        <section class="box box-spaced" aria-labelledby="all-heading">
-            <div class="box-header">
-                <h2 id="all-heading">Semua transaksi</h2>
-                <label class="visually-hidden" for="filter-month">Filter bulan</label>
-                <select id="filter-month" class="form-input select-inline" onchange="renderAllTransactions()">
-                    <option value="all">Semua bulan</option>
-                    <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
-                    <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
-                    <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
-                    <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
-                </select>
-            </div>
-            <div id="all-tx-list"></div>
-        </section>
     </main>
 
     <div id="transactionModal" class="modal-overlay">
