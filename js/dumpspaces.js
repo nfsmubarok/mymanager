@@ -109,7 +109,9 @@ async function saveDump() {
 
     if (type === 'Note' && !title && !content) { showToast('Isi catatannya dulu.', true); return; }
     if (type === 'Link') {
-        finalUrl = safeUrl(document.getElementById('dump-url').value.trim());
+        // Input user wajib URL absolut. Tanpa skema, safeUrl bakal nganggep itu path di domain app ini.
+        const raw = document.getElementById('dump-url').value.trim();
+        finalUrl = /^https?:\/\//i.test(raw) ? safeUrl(raw) : '';
         if (!finalUrl) { showToast('URL-nya harus diawali http:// atau https://.', true); return; }
     }
     const fileInput = document.getElementById('dump-file');

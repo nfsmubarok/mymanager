@@ -73,7 +73,7 @@ function renderHobbies() {
                 <div class="card-body">
                     <h3><button type="button" class="card-link" data-action="hobby-open" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>
                     ${rated
-                        ? `<p class="stars" aria-label="Nilai ${parseInt(item.rating)} dari 5"><span aria-hidden="true">${getStars(item.rating)}</span></p>`
+                        ? `<p class="stars"><span aria-hidden="true">${getStars(item.rating)}</span><span class="visually-hidden">Nilai ${Math.min(5, parseInt(item.rating))} dari 5</span></p>`
                         : '<p class="stars-none">Belum dinilai</p>'}
                     <p class="review-text">${item.review ? esc(item.review) : 'Belum ada review.'}</p>
                 </div>
