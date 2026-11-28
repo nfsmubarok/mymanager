@@ -396,6 +396,35 @@ button.day-cell:active { background: var(--line); }
     .event-pill { font-size: 9px; padding: 1px 2px; }
 }
 
+/* ---------- 12. Wishlist ---------- */
+/* Grid kartu kertas; wish paling deket target dapet kartu lebar (fokus halaman) */
+.wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; align-items: start; }
+.wish-card { position: relative; display: flex; flex-direction: column; gap: 10px; border-top: 3px solid var(--ai); transition: border-color .15s, background-color .15s; }
+.wish-card:hover { border-color: var(--ai); }
+.wish-card.done { border-top-color: var(--muted); }
+.wish-card.featured { grid-column: span 2; }
+.wish-card.featured h2 { font-size: 30px; }
+.wish-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.wish-head h2 { font-size: 21px; margin: 0; }
+.wish-target { font-weight: 700; color: var(--muted); white-space: nowrap; }
+.wish-progress { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
+.wish-pct { color: var(--ai); font-weight: 700; }
+.done-tag { color: var(--muted); font-weight: 700; }
+.ink-bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.ink-bar span { display: block; height: 100%; background: var(--ai); border-radius: 3px; }
+.wish-card.done .ink-bar span { background: var(--muted); }
+.plan-list { list-style: none; margin: 4px 0 0; padding: 0; font-size: 14px; }
+.plan-list li { padding: 6px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.plan-list li::before { content: "・"; color: var(--hanko); }
+.plan-list li.done { color: var(--muted); text-decoration: line-through; }
+.checklist-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.checklist-item input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ai); }
+.card-link { background: none; border: none; padding: 0; font: inherit; color: inherit; text-align: left; overflow-wrap: anywhere; }
+.card-link::after { content: ""; position: absolute; inset: 0; }
+.card-link:focus-visible { outline: none; }
+.wish-card:focus-within, .rating-card:focus-within { outline: 2px solid var(--ai); outline-offset: 2px; }
+@media (max-width: 680px) { .wish-card.featured { grid-column: auto; } .wish-card.featured h2 { font-size: 24px; } }
+
 /* ---------- 10. Login ---------- */
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .login-theme { position: fixed; top: 14px; right: 14px; z-index: 10; }
