@@ -65,15 +65,16 @@
             <button type="button" class="btn-add" onclick="openAddModal()">+ Tambah judul</button>
         </header>
 
-        <div class="content-grid">
-            <section class="box" aria-labelledby="rated-heading">
-                <div class="box-header"><h2 id="rated-heading">Udah ditonton atau dimainin</h2></div>
+        <div class="hobby-grid">
+            <!-- Rak kartu tanpa bingkai: sampul kana jadi fokus -->
+            <section aria-labelledby="rated-heading">
+                <h2 id="rated-heading" class="section-title">Udah ditonton atau dimainin</h2>
                 <div class="rating-grid" id="ratings-container"></div>
             </section>
 
-            <section class="box" aria-labelledby="watch-heading">
-                <div class="box-header"><h2 id="watch-heading">Antrian berikutnya</h2></div>
-                <div id="watchlist-container"></div>
+            <section class="paper" aria-labelledby="watch-heading">
+                <h2 id="watch-heading">Antrian</h2>
+                <div id="watchlist-container" class="ledger"></div>
             </section>
         </div>
     </main>

@@ -1,5 +1,6 @@
 let hobbies = [];
 let activeEditId = null;
+let hobbiesLoaded = false;
 
 // Nilai type di database tetap (Anime, Movie, Series, Game).
 // Cover pakai kata Jepang sebagai motif, nyambung sama logo マネージャー.
@@ -25,8 +26,11 @@ async function fetchCloudHobbies() {
         if (!user) return;
         const { data, error } = await supabaseClient.from('hobbies').select('*').eq('user_id', user.id);
         if (error) throw error;
+        const first = !hobbiesLoaded;
+        hobbiesLoaded = true;
         hobbies = data || [];
         renderHobbies();
+        if (first && window.Motion) Motion.stagger(document.querySelectorAll('#ratings-container .rating-card, #watchlist-container .ledger-row'));
     } catch (err) {
         console.error('Fetch hobbies error:', err);
         const msg = 'Daftar hobi ga kebaca. Cek koneksi lu, terus coba lagi.';
@@ -42,33 +46,35 @@ function renderHobbies() {
     clearBusy(watchContainer);
     clearBusy(rateContainer);
 
-    const watchlist = hobbies.filter(h => h.status === 'Plan to Watch');
+    // Status selain "Completed" (termasuk kosong dari data lama) dianggap antrian
     const ratedList = hobbies.filter(h => h.status === 'Completed').sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    const watchlist = hobbies.filter(h => h.status !== 'Completed');
+    // Tipe ga dikenal: gaya Anime, tapi label aslinya tetap ditampilin (di-escape)
+    const chip = item => typeConfig[item.type] ? typeConfig[item.type].label : (item.type ? esc(item.type) : 'Tanpa kategori');
 
     watchContainer.innerHTML = watchlist.length === 0
         ? '<div class="empty-state">Antrian kosong. Tambahin judul yang pengen lu tonton.</div>'
-        : watchlist.map(item => {
-            const t = typeOf(item.type);
-            return `
-            <button type="button" class="list-btn" onclick="openEditModal('${esc(item.id)}')">
-                <span>
-                    <span class="type-badge type-${t}">${typeConfig[t].label}</span><br>
-                    <span class="title">${esc(item.title)}</span>
-                </span>
-                <span class="btn-text" aria-hidden="true">Edit</span>
-            </button>`;
-        }).join('');
+        : watchlist.map(item => `
+            <div class="ledger-row">
+                <div class="ledger-main">
+                    <p class="ledger-title"><button type="button" class="row-link" data-action="hobby-open" data-id="${esc(item.id)}">${esc(item.title)}</button></p>
+                    <p class="ledger-meta"><span class="type-badge type-${typeOf(item.type)}">${chip(item)}</span></p>
+                </div>
+            </div>`).join('');
 
     rateContainer.innerHTML = ratedList.length === 0
         ? '<div class="empty-state">Belum ada review. Selesain satu, terus kasih nilai.</div>'
         : ratedList.map(item => {
             const t = typeOf(item.type);
+            const rated = parseInt(item.rating) > 0;
             return `
             <article class="rating-card">
                 <div class="card-cover type-${t}" lang="ja" aria-hidden="true">${typeConfig[t].jp}</div>
                 <div class="card-body">
-                    <h3><button type="button" class="card-link" onclick="openEditModal('${esc(item.id)}')">${esc(item.title)}</button></h3>
-                    <p class="stars" aria-label="Nilai ${parseInt(item.rating) || 0} dari 5">${getStars(item.rating)}</p>
+                    <h3><button type="button" class="card-link" data-action="hobby-open" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>
+                    ${rated
+                        ? `<p class="stars" aria-label="Nilai ${parseInt(item.rating)} dari 5"><span aria-hidden="true">${getStars(item.rating)}</span></p>`
+                        : '<p class="stars-none">Belum dinilai</p>'}
                     <p class="review-text">${item.review ? esc(item.review) : 'Belum ada review.'}</p>
                 </div>
             </article>`;
@@ -99,7 +105,7 @@ function openEditModal(id) {
     document.getElementById('modal-title').textContent = 'Edit judul';
     document.getElementById('hobby-title').value = item.title;
     document.getElementById('hobby-type').value = typeOf(item.type);
-    document.getElementById('hobby-status').value = item.status;
+    document.getElementById('hobby-status').value = item.status === 'Completed' ? 'Completed' : 'Plan to Watch';
     document.getElementById('hobby-rating').value = item.rating || '5';
     document.getElementById('hobby-review').value = item.review || '';
     document.getElementById('btn-delete-hobby').hidden = false;
@@ -151,6 +157,8 @@ function triggerDeleteHobby() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    onAction('watchlist-container', { 'hobby-open': id => openEditModal(id) });
+    onAction('ratings-container', { 'hobby-open': id => openEditModal(id) });
     showLoading('watchlist-container');
     showLoading('ratings-container');
     if (await requireAuth()) fetchCloudHobbies();

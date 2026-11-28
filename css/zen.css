@@ -425,6 +425,33 @@ button.day-cell:active { background: var(--line); }
 .wish-card:focus-within, .rating-card:focus-within { outline: 2px solid var(--ai); outline-offset: 2px; }
 @media (max-width: 680px) { .wish-card.featured { grid-column: auto; } .wish-card.featured h2 { font-size: 24px; } }
 
+/* ---------- 13. Hobi ---------- */
+.hobby-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.rating-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; }
+.rating-card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; display: flex; flex-direction: column; transition: border-color .15s; }
+.rating-card:hover { border-color: var(--ai); }
+/* Sampul: kata kana mincho vertikal di atas tint tipe (motif identitas) */
+.card-cover {
+    height: 150px; display: grid; place-items: center; writing-mode: vertical-rl;
+    font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: .3em;
+}
+.card-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
+.card-body h3 { font-size: 17px; }
+.stars { color: var(--hanko); letter-spacing: 2px; font-size: 15px; }
+.stars-none { color: var(--muted); font-size: 13px; }
+.review-text { font-size: 14px; color: var(--muted); font-style: italic; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.type-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 0 7px; border-radius: 2px; line-height: 20px; }
+.type-Anime { background: var(--hanko-tint); color: var(--hanko); }
+.type-Movie { background: var(--ai-tint); color: var(--ai); }
+.type-Series { background: var(--line); color: var(--ink); }
+.type-Game { background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--ink); }
+.row-link { background: none; border: none; padding: 0; font: inherit; color: inherit; text-align: left; min-height: 32px; overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .15s; }
+.row-link:hover { text-decoration-color: currentColor; }
+.rating-area { padding-top: 12px; border-top: 1px dashed var(--line-strong); }
+@media (max-width: 1100px) { .hobby-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .rating-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .card-cover { height: 110px; font-size: 20px; } }
+@media (max-width: 767px) { .row-link { min-height: 44px; } }
+
 /* ---------- 10. Login ---------- */
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .login-theme { position: fixed; top: 14px; right: 14px; z-index: 10; }
