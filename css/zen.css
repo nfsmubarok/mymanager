@@ -267,6 +267,7 @@ fieldset.form-group { border: none; }
 /* Modal: lembar kertas di atas tinta tipis */
 .modal-overlay { display: none; position: fixed; inset: 0; z-index: 1000; padding: 16px; justify-content: center; align-items: center; background: color-mix(in srgb, var(--paper) 55%, transparent); }
 .modal-overlay.open { display: flex; }
+.modal-overlay[data-closing] { pointer-events: none; } /* cegah klik "Simpan" kedua pas modal lagi nutup */
 .modal-sheet, .modal-content {
     position: relative; z-index: 1; width: 480px; max-width: 100%; max-height: 90vh; overflow-y: auto;
     background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 26px 28px; box-shadow: var(--shadow);

@@ -37,6 +37,7 @@
             document.documentElement.dataset.inking = toDark ? 'in' : 'out';
 
             const vt = document.startViewTransition(() => apply(next));
+            vt.updateCallbackDone.catch(() => {}); // transisi bisa dibatalin browser (misal pindah halaman), jangan jadi error
             vt.ready.then(() => {
                 const small = `circle(0px at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
                 document.documentElement.animate(

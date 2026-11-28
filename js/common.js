@@ -107,8 +107,15 @@ async function closeModal(modalId) {
     modal.classList.remove('open');
     if (typeof window.onModalClose === 'function') window.onModalClose(modalId);
     const back = modalReturnFocus[modalId];
-    if (back && document.contains(back) && typeof back.focus === 'function') back.focus();
     delete modalReturnFocus[modalId];
+    // Kalau modal lain kebuka selama yang ini lagi nutup (misal "tambah jadwal" dari jadwal harian),
+    // jangan rebut focus-nya. Oper target balik focus ke modal yang masih kebuka.
+    const others = Array.from(document.querySelectorAll('.modal-overlay.open')).filter(m => !m.dataset.closing);
+    if (others.length) {
+        others.forEach(m => { const r = modalReturnFocus[m.id]; if (!r || modal.contains(r)) modalReturnFocus[m.id] = back; });
+        return;
+    }
+    if (back && document.contains(back) && typeof back.focus === 'function') back.focus();
 }
 
 function topOpenModal() {

@@ -71,7 +71,8 @@
             const g = gs();
             const list = Array.from(els || []);
             if (!g || !list.length) return;
-            g.fromTo(list, { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out', clearProps: 'opacity,transform' });
+            // Cuma 12 elemen pertama yang dianimasiin, total jeda maksimal 0.6s, biar data panjang ga ketahan ga kelihatan
+            g.fromTo(list.slice(0, 12), { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, stagger: { each: 0.1, amount: Math.min(0.6, 0.1 * (Math.min(list.length, 12) - 1)) }, ease: 'power2.out', clearProps: 'opacity,transform' });
         },
 
         // Stempel 済 buat momen "beres"
@@ -98,7 +99,8 @@
             g.set(blot, { left: x, top: y, width: R * 2, height: R * 2, xPercent: -50, yPercent: -50, scale: 0, opacity: 1 });
             g.timeline()
                 .to(blot, { scale: 1, duration: 0.45, ease: 'power2.out' })
-                .fromTo(sheet, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out', clearProps: 'transform' }, '-=0.15');
+                // opacity, bukan autoAlpha: elemen visibility:hidden ga bisa di-focus, padahal openModal langsung mindahin focus ke form
+                .fromTo(sheet, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', clearProps: 'opacity,transform' }, '-=0.15');
         },
 
         modalOut(overlay) {
@@ -110,7 +112,7 @@
                 // Fallback: tab di background bikin rAF berhenti, modal tetap harus nutup
                 setTimeout(resolve, 400);
                 const tl = g.timeline({ onComplete: resolve });
-                if (sheet) tl.to(sheet, { autoAlpha: 0, y: 8, duration: 0.12 });
+                if (sheet) tl.to(sheet, { opacity: 0, y: 8, duration: 0.12 });
                 if (blot) tl.to(blot, { scale: 0, duration: 0.12 }, '<0.05');
                 if (sheet) tl.set(sheet, { clearProps: 'all' });
                 if (!sheet && !blot) resolve();
