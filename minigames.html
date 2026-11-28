@@ -64,25 +64,29 @@
             <span class="tategaki" lang="ja" aria-hidden="true">静かに考える</span>
         </header>
 
-        <div class="game-container">
-            <div class="form-group game-level">
-                <label for="sudoku-level">Tingkat kesulitan</label>
-                <select id="sudoku-level" class="form-input" onchange="generateSudoku()">
-                    <option value="30">Gampang</option>
-                    <option value="45" selected>Sedang</option>
-                    <option value="55">Susah</option>
-                </select>
-            </div>
+        <div class="sudoku-layout">
+            <!-- Papan di atas lembar kertas: fokus utama halaman -->
+            <section class="paper" id="sudoku-paper" aria-label="Papan sudoku">
+                <div id="sudoku-board" class="sudoku-grid" role="group" aria-label="Papan sudoku 9 kali 9"></div>
+                <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
+            </section>
 
-            <div class="game-bar">
-                <span>Nyawa</span>
-                <span id="lives-display" class="lives" aria-live="polite"></span>
-            </div>
-
-            <div id="sudoku-board" class="sudoku-grid" role="group" aria-label="Papan sudoku 9 kali 9"></div>
-            <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
-
-            <button type="button" class="btn-submit btn-block" onclick="generateSudoku()">Ulang dari awal</button>
+            <aside class="sudoku-side" aria-label="Pengaturan permainan">
+                <div class="field">
+                    <label for="sudoku-level">Tingkat kesulitan</label>
+                    <select id="sudoku-level" class="form-input" onchange="generateSudoku()">
+                        <option value="30">Gampang</option>
+                        <option value="45" selected>Sedang</option>
+                        <option value="55">Susah</option>
+                    </select>
+                </div>
+                <div class="game-bar">
+                    <span>Nyawa</span>
+                    <span id="lives-display" class="lives" aria-live="polite"></span>
+                </div>
+                <button type="button" class="btn btn-outline btn-block" onclick="generateSudoku()">Ulang dari awal</button>
+                <p class="form-hint">Pakai panah keyboard buat pindah kotak.</p>
+            </aside>
         </div>
     </main>
 

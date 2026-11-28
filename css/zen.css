@@ -474,6 +474,28 @@ button.day-cell:active { background: var(--line); }
 .type-image { background: var(--hanko-tint); color: var(--hanko); }
 @media (max-width: 767px) { .dump-link { min-height: 44px; } }
 
+/* ---------- 15. Sudoku ---------- */
+.sudoku-layout { display: grid; grid-template-columns: minmax(0, 480px) minmax(220px, 280px); gap: 32px; align-items: start; }
+#sudoku-paper { padding: 18px; }
+.sudoku-grid { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; background: var(--card); }
+.sudoku-cell {
+    width: 100%; aspect-ratio: 1; min-width: 0; text-align: center; padding: 0; border: 1px solid var(--line); border-radius: 0;
+    background: transparent; color: var(--ai); font-family: var(--font-body); font-size: clamp(16px, 2.4vw, 22px); font-weight: 700;
+    transition: background-color .2s;
+}
+.sudoku-cell.readonly { color: var(--muted); font-family: var(--font-display); }
+.sudoku-cell.solved { color: var(--ai); font-family: var(--font-body); }
+.sudoku-cell.wrong { background: var(--hanko-tint); }
+.sudoku-cell:focus-visible { outline: 2px solid var(--ai); outline-offset: -2px; background: var(--ai-tint); }
+.thick-right { border-right: 2px solid var(--ink); }
+.thick-bottom { border-bottom: 2px solid var(--ink); }
+.sudoku-cell::-webkit-outer-spin-button, .sudoku-cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.game-status { min-height: 24px; margin-top: 12px; text-align: center; font-weight: 500; }
+.sudoku-side { display: flex; flex-direction: column; gap: 16px; }
+.game-bar { display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+.lives { color: var(--hanko); letter-spacing: 4px; font-size: 18px; }
+@media (max-width: 860px) { .sudoku-layout { grid-template-columns: minmax(0, 1fr); } #sudoku-paper { padding: 0; border: none; background: none; } }
+
 /* ---------- 10. Login ---------- */
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .login-theme { position: fixed; top: 14px; right: 14px; z-index: 10; }
