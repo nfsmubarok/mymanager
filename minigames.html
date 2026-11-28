@@ -4,70 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sudoku · マネージャー</title>
+    <script>(function(){var t;try{t=localStorage.getItem('zen-theme');}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'sumi':'washi');})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&display=swap">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="css/zen.css">
 </head>
 <body>
     <a class="skip-link" href="#main">Langsung ke konten</a>
 
-    <aside class="sidebar">
-        <div class="logo" lang="ja">マネージャー</div>
-        <nav aria-label="Menu utama">
-            <div class="menu-group">
-                <p class="menu-title">Harian</p>
-                <a href="index.html" class="menu-item">Keuangan</a>
-                <a href="schedule.html" class="menu-item">Jadwal &amp; tugas</a>
-                <a href="wishlist.html" class="menu-item">Wishlist</a>
-            </div>
-            <div class="menu-group">
-                <p class="menu-title">Santai &amp; catatan</p>
-                <a href="hobbies.html" class="menu-item">Hobi</a>
-                <a href="dumpspaces.html" class="menu-item">Dumpspaces</a>
-                <a href="minigames.html" class="menu-item active" aria-current="page">Sudoku</a>
-            </div>
-        </nav>
-        <div class="sidebar-footer">
-            <button type="button" class="btn-logout" id="btn-logout">Keluar</button>
+    <canvas class="petals" aria-hidden="true"></canvas>
+
+    <nav class="rail" aria-label="Menu utama">
+        <a href="index.html" class="rail-logo" lang="ja" aria-label="マネージャー, ke halaman Keuangan">マネージャー</a>
+        <div class="rail-links">
+            <a href="index.html" class="rail-link" aria-label="Keuangan" data-tip="Keuangan"><svg aria-hidden="true"><use href="img/icons.svg#money"/></svg></a>
+            <a href="schedule.html" class="rail-link" aria-label="Jadwal &amp; tugas" data-tip="Jadwal &amp; tugas"><svg aria-hidden="true"><use href="img/icons.svg#calendar"/></svg></a>
+            <a href="wishlist.html" class="rail-link" aria-label="Wishlist" data-tip="Wishlist"><svg aria-hidden="true"><use href="img/icons.svg#ema"/></svg></a>
+            <a href="hobbies.html" class="rail-link" aria-label="Hobi" data-tip="Hobi"><svg aria-hidden="true"><use href="img/icons.svg#kendama"/></svg></a>
+            <a href="dumpspaces.html" class="rail-link" aria-label="Dumpspaces" data-tip="Dumpspaces"><svg aria-hidden="true"><use href="img/icons.svg#scroll"/></svg></a>
+            <a href="minigames.html" class="rail-link" aria-current="page" aria-label="Sudoku" data-tip="Sudoku"><svg aria-hidden="true"><use href="img/icons.svg#soroban"/></svg></a>
         </div>
-    </aside>
+        <div class="rail-tools">
+            <button type="button" class="tool-btn" id="btn-motion" aria-label="Gerak" data-tip="Gerak"><svg aria-hidden="true"><use href="img/icons.svg#wind"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-petals" aria-label="Kelopak" data-tip="Kelopak"><svg aria-hidden="true"><use href="img/icons.svg#petal"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-theme" aria-label="Ganti ke mode malam" data-tip="Mode malam"><svg aria-hidden="true"><use href="img/icons.svg#moon"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-logout" aria-label="Keluar" data-tip="Keluar"><svg aria-hidden="true"><use href="img/icons.svg#noren"/></svg></button>
+        </div>
+    </nav>
+
+    <header class="mobile-bar">
+        <a href="index.html" class="mobile-logo" lang="ja">マネージャー</a>
+        <div class="mobile-tools">
+            <button type="button" class="tool-btn" id="btn-motion-m" aria-label="Gerak"><svg aria-hidden="true"><use href="img/icons.svg#wind"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-petals-m" aria-label="Kelopak"><svg aria-hidden="true"><use href="img/icons.svg#petal"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-theme-m" aria-label="Ganti ke mode malam"><svg aria-hidden="true"><use href="img/icons.svg#moon"/></svg></button>
+            <button type="button" class="tool-btn" id="btn-logout-m" aria-label="Keluar"><svg aria-hidden="true"><use href="img/icons.svg#noren"/></svg></button>
+        </div>
+    </header>
+
+    <nav class="tabbar" aria-label="Menu utama">
+        <a href="index.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#money"/></svg><span>Keuangan</span></a>
+        <a href="schedule.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#calendar"/></svg><span>Jadwal</span></a>
+        <a href="wishlist.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#ema"/></svg><span>Wishlist</span></a>
+        <a href="hobbies.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#kendama"/></svg><span>Hobi</span></a>
+        <a href="dumpspaces.html" class="tab"><svg aria-hidden="true"><use href="img/icons.svg#scroll"/></svg><span>Dumps</span></a>
+        <a href="minigames.html" class="tab" aria-current="page"><svg aria-hidden="true"><use href="img/icons.svg#soroban"/></svg><span>Sudoku</span></a>
+    </nav>
+
 
     <main class="main-content" id="main">
-        <header class="header">
-            <div>
-                <h1>Sudoku <span class="jp" lang="ja" aria-hidden="true">数独</span></h1>
-                <p>Latih fokus lu. Isi kotak kosong pakai angka 1 sampai 9.</p>
+        <span class="watermark" lang="ja" aria-hidden="true">数</span>
+        <header class="page-head">
+            <div class="page-title">
+                <p class="eyebrow" id="page-eyebrow">Sudoku</p>
+                <h1>Sudoku</h1>
+                <p class="page-lede">Latih fokus lu. Isi kotak kosong pakai angka 1 sampai 9.</p>
             </div>
+            <span class="tategaki" lang="ja" aria-hidden="true">静かに考える</span>
         </header>
 
-        <div class="game-container">
-            <div class="form-group game-level">
-                <label for="sudoku-level">Tingkat kesulitan</label>
-                <select id="sudoku-level" class="form-input" onchange="generateSudoku()">
-                    <option value="30">Gampang</option>
-                    <option value="45" selected>Sedang</option>
-                    <option value="55">Susah</option>
-                </select>
-            </div>
+        <div class="sudoku-layout">
+            <!-- Papan di atas lembar kertas: fokus utama halaman -->
+            <section class="paper" id="sudoku-paper" aria-label="Papan sudoku">
+                <div id="sudoku-board" class="sudoku-grid" role="group" aria-label="Papan sudoku 9 kali 9"></div>
+                <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
+            </section>
 
-            <div class="game-bar">
-                <span>Nyawa</span>
-                <span id="lives-display" class="lives" aria-live="polite"></span>
-            </div>
-
-            <div id="sudoku-board" class="sudoku-grid" role="group" aria-label="Papan sudoku 9 kali 9"></div>
-            <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
-
-            <button type="button" class="btn-submit btn-block" onclick="generateSudoku()">Ulang dari awal</button>
+            <aside class="sudoku-side" aria-label="Pengaturan permainan">
+                <div class="field">
+                    <label for="sudoku-level">Tingkat kesulitan</label>
+                    <select id="sudoku-level" class="form-input" onchange="generateSudoku()">
+                        <option value="30">Gampang</option>
+                        <option value="45" selected>Sedang</option>
+                        <option value="55">Susah</option>
+                    </select>
+                </div>
+                <div class="game-bar">
+                    <span>Nyawa</span>
+                    <span id="lives-display" class="lives" aria-live="polite"></span>
+                </div>
+                <button type="button" class="btn btn-outline btn-block" onclick="generateSudoku()">Ulang dari awal</button>
+                <p class="form-hint">Pakai panah keyboard buat pindah kotak.</p>
+            </aside>
         </div>
     </main>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/motion.js"></script>
+    <script src="js/petals.js"></script>
     <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/shell.js"></script>
     <script src="js/minigames.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
 </body>
 </html>

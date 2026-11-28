@@ -41,6 +41,24 @@ function formatDate(dateStr) {
     return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// --- AKSI BARIS (delegasi) ---
+// Template nulis data-action + data-id, bukan handler onclick yang nyelipin id ke string JS.
+// ID ga pernah masuk ke string JS, jadi ID aneh ga bisa nyisipin script.
+function onAction(root, handlers) {
+    if (typeof root === 'string') root = document.getElementById(root);
+    if (!root) return;
+    const run = (e, isChange) => {
+        const el = e.target.closest && e.target.closest('[data-action]');
+        if (!el || !root.contains(el)) return;
+        const isBox = el.matches('input[type="checkbox"], input[type="radio"]');
+        if (isBox !== isChange) return;
+        const fn = handlers[el.dataset.action];
+        if (fn) fn(el.dataset.id, el, e);
+    };
+    root.addEventListener('click', e => run(e, false));
+    root.addEventListener('change', e => run(e, true));
+}
+
 // --- TOAST ---
 let toastTimer = null;
 function showToast(msg, isError = false) {
@@ -91,18 +109,31 @@ function openModal(modalId) {
     if (typeof window.onModalOpen === 'function') window.onModalOpen(modalId);
     modalReturnFocus[modalId] = document.activeElement;
     modal.classList.add('open');
+    if (window.Motion) Motion.modalIn(modal, modalReturnFocus[modalId]);
     const target = modal.querySelector('[autofocus], input:not([type="hidden"]):not([disabled]), select, textarea, button:not(.close-btn)') || modal.querySelector('button');
     if (target) setTimeout(() => target.focus(), 0);
 }
 
-function closeModal(modalId) {
+async function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (!modal) return;
+    if (!modal || !modal.classList.contains('open') || modal.dataset.closing) return;
+    if (window.Motion) {
+        modal.dataset.closing = '1';
+        await Motion.modalOut(modal);
+        delete modal.dataset.closing;
+    }
     modal.classList.remove('open');
     if (typeof window.onModalClose === 'function') window.onModalClose(modalId);
     const back = modalReturnFocus[modalId];
-    if (back && document.contains(back) && typeof back.focus === 'function') back.focus();
     delete modalReturnFocus[modalId];
+    // Kalau modal lain kebuka selama yang ini lagi nutup (misal "tambah jadwal" dari jadwal harian),
+    // jangan rebut focus-nya. Oper target balik focus ke modal yang masih kebuka.
+    const others = Array.from(document.querySelectorAll('.modal-overlay.open')).filter(m => !m.dataset.closing);
+    if (others.length) {
+        others.forEach(m => { const r = modalReturnFocus[m.id]; if (!r || modal.contains(r)) modalReturnFocus[m.id] = back; });
+        return;
+    }
+    if (back && document.contains(back) && typeof back.focus === 'function') back.focus();
 }
 
 function topOpenModal() {

@@ -1,4 +1,5 @@
 let dumps = [];
+let dumpsLoaded = false;
 
 const dumpTypes = {
     Note: { label: 'Catatan', badge: 'type-note' },
@@ -15,8 +16,11 @@ async function fetchCloudDumps() {
         if (!user) return;
         const { data, error } = await supabaseClient.from('dumpspaces').select('*').eq('user_id', user.id);
         if (error) throw error;
+        const first = !dumpsLoaded;
+        dumpsLoaded = true;
         dumps = data || [];
         renderDumps();
+        if (first && window.Motion) Motion.stagger(document.querySelectorAll('#dumps-container .dump-card'));
     } catch (err) {
         console.error('Fetch dumps error:', err);
         showError(container, 'Dumpspace ga kebaca. Cek koneksi lu, terus coba lagi.', fetchCloudDumps);
@@ -35,34 +39,44 @@ function renderDumps() {
     dumps.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
     container.innerHTML = dumps.map(dump => {
-        const cfg = dumpTypes[dump.type] || dumpTypes.Note;
+        const type = dumpTypes[dump.type] ? dump.type : 'Note';
+        const cfg = dumpTypes[type];
         const url = safeUrl(dump.url);
         const label = dump.title || cfg.label;
         let media = '';
         let body = '';
 
-        if (dump.type === 'Image' && url) {
-            media = `<img src="${esc(url)}" alt="${esc(dump.title || dump.content || 'Gambar yang di-dump')}" class="dump-image" width="400" height="300" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('p'), {className: 'state', textContent: 'Gambar ga bisa dimuat.'}))">`;
+        if (type === 'Image' && url) {
+            media = `<img src="${esc(url)}" alt="${esc(dump.title || dump.content || 'Gambar yang di-dump')}" class="dump-image" width="400" height="300" loading="lazy">`;
         }
+        if (type === 'Link' && url) body += `<p class="dump-host num">${esc(new URL(url).hostname)}</p>`;
         if (dump.title) body += `<h2 class="dump-title">${esc(dump.title)}</h2>`;
-        if (dump.content) body += `<p class="dump-text">${esc(dump.content)}</p>`;
-        if (dump.type === 'Link') {
+        if (dump.content) body += `<p class="dump-text${type === 'Note' && dump.content.length > 140 ? ' long' : ''}">${esc(dump.content)}</p>`;
+        if (type === 'Link') {
             body += url
                 ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="dump-link">Buka link <span class="visually-hidden">(tab baru)</span></a>`
                 : '<p class="dump-text">Link-nya ga valid.</p>';
         }
-        if (dump.date) body += `<p class="dump-date">${esc(dump.date)}</p>`;
 
         return `
-        <article class="dump-card">
+        <article class="paper dump-card kind-${type.toLowerCase()}">
             ${media}
             <div class="dump-header">
                 <span class="dump-type-badge ${cfg.badge}">${cfg.label}</span>
-                <button type="button" class="btn-text danger" onclick="triggerDeleteDump('${esc(dump.id)}')" aria-label="Hapus ${esc(label)}">Hapus</button>
+                ${dump.date ? `<span class="dump-date">${esc(dump.date)}</span>` : ''}
+                <button type="button" class="btn-text danger" data-action="dump-delete" data-id="${esc(dump.id)}" aria-label="Hapus ${esc(label)}">Hapus</button>
             </div>
             <div class="dump-body">${body}</div>
         </article>`;
     }).join('');
+
+    // Gambar gagal dimuat: ganti jadi teks (tanpa handler inline)
+    container.querySelectorAll('img.dump-image').forEach(img => img.addEventListener('error', () => {
+        const p = document.createElement('p');
+        p.className = 'state';
+        p.textContent = 'Gambar ga bisa dimuat.';
+        img.replaceWith(p);
+    }, { once: true }));
 }
 
 function toggleDumpFields() {
@@ -95,7 +109,9 @@ async function saveDump() {
 
     if (type === 'Note' && !title && !content) { showToast('Isi catatannya dulu.', true); return; }
     if (type === 'Link') {
-        finalUrl = safeUrl(document.getElementById('dump-url').value.trim());
+        // Input user wajib URL absolut. Tanpa skema, safeUrl bakal nganggep itu path di domain app ini.
+        const raw = document.getElementById('dump-url').value.trim();
+        finalUrl = /^https?:\/\//i.test(raw) ? safeUrl(raw) : '';
         if (!finalUrl) { showToast('URL-nya harus diawali http:// atau https://.', true); return; }
     }
     const fileInput = document.getElementById('dump-file');
@@ -136,6 +152,7 @@ function triggerDeleteDump(id) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    onAction('dumps-container', { 'dump-delete': id => triggerDeleteDump(id) });
     showLoading('dumps-container');
     if (await requireAuth()) fetchCloudDumps();
 });

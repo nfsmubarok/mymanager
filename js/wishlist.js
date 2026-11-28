@@ -8,6 +8,8 @@ function formatRpShort(angka) {
     return formatRp(n);
 }
 
+let wishLoaded = false;
+
 function parsePlans(plans) {
     if (!plans) return [];
     if (typeof plans === 'string') {
@@ -33,7 +35,10 @@ async function fetchCloudWishlists() {
             currentAmount: Number(w.current_amount) || 0,
             plans: parsePlans(w.plans)
         }));
+        const first = !wishLoaded;
+        wishLoaded = true;
         renderWishlists();
+        if (first && window.Motion) Motion.stagger(document.querySelectorAll('#wishlist-container .wish-card'));
     } catch (err) {
         console.error('Fetch wishlists error:', err);
         showError(container, 'Wishlist ga kebaca. Cek koneksi lu, terus coba lagi.', fetchCloudWishlists);
@@ -48,28 +53,35 @@ function renderWishlists() {
         return;
     }
 
-    container.innerHTML = wishlists.map(wish => {
-        let percent = wish.targetAmount > 0 ? (wish.currentAmount / wish.targetAmount) * 100 : 0;
-        if (percent > 100) percent = 100;
+    // Wish yang paling deket target (tapi belum tercapai) jadi kartu unggulan di depan
+    const pct = w => w.targetAmount > 0 ? (w.currentAmount / w.targetAmount) * 100 : 0;
+    const open = wishlists.filter(w => pct(w) < 100).sort((a, b) => pct(b) - pct(a));
+    const featuredId = wishlists.length >= 3 && open.length ? open[0].id : null;
+    const ordered = featuredId ? [open[0], ...wishlists.filter(w => w.id !== featuredId)] : wishlists;
+
+    container.innerHTML = ordered.map(wish => {
+        const percent = Math.min(100, pct(wish));
         const done = percent >= 100;
         const plansHtml = wish.plans.length
             ? '<ul class="plan-list">' + wish.plans.slice(0, 3).map(plan => `<li${plan.done ? ' class="done"' : ''}>${esc(plan.text)}</li>`).join('') + '</ul>'
             : '';
         return `
-        <article class="wish-card${done ? ' done' : ''}">
-            <div class="box-header">
-                <h2><button type="button" class="card-link" onclick="openEditModal('${esc(wish.id)}')">${esc(wish.title)}</button></h2>
-                <span class="price-badge">${formatRpShort(wish.targetAmount)}</span>
+        <article class="paper wish-card${done ? ' done' : ''}${wish.id === featuredId ? ' featured' : ''}">
+            <div class="wish-head">
+                <h2><button type="button" class="card-link" data-action="wish-open" data-id="${esc(wish.id)}">${esc(wish.title)}</button></h2>
+                <span class="wish-target num">${formatRpShort(wish.targetAmount)}</span>
             </div>
             <div class="wish-progress">
-                <span>${formatRpShort(wish.currentAmount)} terkumpul</span>
-                <span class="${done ? 'done-tag' : 'text-green'}">${done ? 'Tercapai' : Math.floor(percent) + '%'}</span>
+                <span class="num">${formatRpShort(wish.currentAmount)} terkumpul</span>
+                <span class="${done ? 'done-tag' : 'wish-pct'} num">${done ? 'Tercapai' : Math.floor(percent) + '%'}</span>
             </div>
-            <div class="stat-bar-bg"><div class="stat-bar-fill${done ? ' done' : ''}" style="width: ${percent}%;"></div></div>
+            <div class="ink-bar" role="progressbar" aria-label="Progres ${esc(wish.title)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.floor(percent)}"><span style="width: ${percent}%;"></span></div>
             ${plansHtml}
         </article>`;
     }).join('');
 }
+
+function wishPercent(w) { return w && w.targetAmount > 0 ? (w.currentAmount / w.targetAmount) * 100 : 0; }
 
 function openAddModal() {
     document.getElementById('wish-title').value = '';
@@ -142,11 +154,18 @@ async function saveEditWish() {
     btn.disabled = false;
 
     if (error) { showToast('Gagal update wishlist.', true); return; }
+    const before = wishPercent(wish);
     wish.currentAmount = newAmount;
     wish.plans = newPlans;
-    showToast('Progres diupdate.');
+    const reached = before < 100 && wishPercent(wish) >= 100;
+    showToast(reached ? 'Tercapai! Selamat.' : 'Progres diupdate.');
     closeModal('editWishModal');
     renderWishlists();
+    // Stempel 済 cuma pas wish baru aja nyampe target
+    if (reached && window.Motion) {
+        const link = document.querySelector(`[data-action="wish-open"][data-id="${CSS.escape(String(wish.id))}"]`);
+        if (link) Motion.stampHanko(link.closest('.wish-card'));
+    }
 }
 
 function triggerDeleteWish() {
@@ -161,6 +180,7 @@ function triggerDeleteWish() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    onAction('wishlist-container', { 'wish-open': id => openEditModal(id) });
     showLoading('wishlist-container');
     if (await requireAuth()) fetchCloudWishlists();
 });

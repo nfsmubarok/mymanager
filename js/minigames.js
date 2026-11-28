@@ -15,6 +15,8 @@ function generateSudoku() {
     cellsLeft = targetHoles;
     updateLivesDisplay();
     setStatus('');
+    const oldSeal = document.querySelector('#sudoku-paper > .hanko-seal');
+    if (oldSeal) oldSeal.remove(); // game baru, stempel lama dibuang
 
     // Papan dasar yang valid, lalu angkanya diacak biar tiap game beda
     const base = [
@@ -87,6 +89,7 @@ function renderBoard(board) {
                         if (cellsLeft === 0) {
                             setStatus('Beres! Lu berhasil mecahin sudoku-nya.');
                             showToast('Beres! Sudoku kepecahin.');
+                            if (window.Motion) Motion.stampHanko(document.getElementById('sudoku-paper'));
                         }
                     } else {
                         lives--;
