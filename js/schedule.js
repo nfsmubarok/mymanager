@@ -35,8 +35,11 @@ async function fetchCloudSchedule() {
 
         schedules = schRes.data || [];
         tasks = taskRes.data || [];
+        const first = !scheduleLoaded;
         scheduleLoaded = true;
         renderAll();
+        // Load pertama aja: hari yang ada jadwalnya, terus baris hari ini dan tugas, muncul berurutan
+        if (first && window.Motion) Motion.stagger(document.querySelectorAll('#calendar-days .day-cell.has-events, #upcoming-list .schedule-item, #task-list .ledger-row'));
     } catch (err) {
         console.error('Fetch schedule error:', err);
         const msg = 'Jadwal ga kebaca. Cek koneksi lu, terus coba lagi.';
@@ -58,6 +61,8 @@ function loadCalendar() {
     const month = dt.getMonth();
     const year = dt.getFullYear();
     monthDisplay.textContent = dt.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const eyebrow = document.getElementById('page-eyebrow');
+    if (eyebrow) eyebrow.textContent = 'Jadwal · ' + new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 
     const paddingDays = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -77,7 +82,7 @@ function loadCalendar() {
 
         const cell = document.createElement('button');
         cell.type = 'button';
-        cell.className = 'day-cell' + (dateStr === todayStr ? ' today' : '');
+        cell.className = 'day-cell' + (dateStr === todayStr ? ' today' : '') + (dayEvents.length ? ' has-events' : '');
         const readable = new Date(year, month, day).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
         cell.setAttribute('aria-label', `${readable}, ${dayEvents.length ? dayEvents.length + ' jadwal' : 'kosong'}`);
         if (dateStr === todayStr) cell.setAttribute('aria-current', 'date');
@@ -117,9 +122,9 @@ function openDailyModal(dateStr) {
                     <p class="schedule-title">${esc(formatTime(event.time))} ${esc(event.title)}</p>
                     <p class="schedule-meta">Prioritas ${priorityLabels[prio(event.priority)].toLowerCase()}</p>
                 </div>
-                <div class="tx-actions">
-                    <button type="button" class="btn-text" onclick="editSchedule('${esc(event.id)}')" aria-label="Edit ${esc(event.title)}">Edit</button>
-                    <button type="button" class="btn-text danger" onclick="deleteSchedule('${esc(event.id)}')" aria-label="Hapus ${esc(event.title)}">Hapus</button>
+                <div class="row-actions">
+                    <button type="button" class="btn-text" data-action="schedule-edit" data-id="${esc(event.id)}" aria-label="Edit ${esc(event.title)}">Edit</button>
+                    <button type="button" class="btn-text danger" data-action="schedule-delete" data-id="${esc(event.id)}" aria-label="Hapus ${esc(event.title)}">Hapus</button>
                 </div>
             </div>`).join('');
     }
@@ -161,29 +166,27 @@ function renderTasks() {
         const id = esc(task.id);
         const p = prio(task.priority);
         return `
-        <div class="task-item${task.completed ? ' completed' : ''}">
-            <input type="checkbox" id="task-${id}" ${task.completed ? 'checked' : ''} onchange="toggleTask('${id}')">
-            <div class="task-content">
-                <label class="task-title" for="task-${id}">${esc(task.name)}</label>
-                <div class="task-foot">
-                    <span>Deadline ${formatDate(task.deadline)} · <span class="priority-tag tag-${p}">${priorityLabels[p]}</span></span>
-                    <button type="button" class="btn-text danger" onclick="deleteTask('${id}')" aria-label="Hapus tugas ${esc(task.name)}">Hapus</button>
-                </div>
+        <div class="ledger-row task-item${task.completed ? ' completed' : ''}">
+            <input type="checkbox" class="task-check" id="task-${id}" data-action="task-toggle" data-id="${id}" ${task.completed ? 'checked' : ''}>
+            <div class="ledger-main">
+                <label class="ledger-title task-title" for="task-${id}">${esc(task.name)}</label>
+                <p class="ledger-meta">${task.deadline === toDateStr(new Date()) ? 'Hari ini' : 'Deadline ' + formatDate(task.deadline)} · <span class="priority-tag tag-${p}">${priorityLabels[p]}</span></p>
             </div>
+            <button type="button" class="btn-text danger" data-action="task-delete" data-id="${id}" aria-label="Hapus tugas ${esc(task.name)}">Hapus</button>
         </div>`;
     }).join('');
 }
 
-function openAddFromDaily() {
-    closeModal('dailyModal');
+async function openAddFromDaily() {
+    await closeModal('dailyModal');
     openModal('scheduleModal');
     if (selectedDateForNew) document.getElementById('sch-date').value = selectedDateForNew;
 }
 
-function editSchedule(id) {
+async function editSchedule(id) {
     const sch = schedules.find(s => s.id == id);
     if (!sch) return;
-    closeModal('dailyModal');
+    await closeModal('dailyModal');
     editingScheduleId = sch.id;
     openModal('scheduleModal');
     document.getElementById('schedule-modal-title').textContent = 'Edit jadwal';
@@ -263,6 +266,14 @@ async function toggleTask(id) {
     renderTasks();
     const cb = document.getElementById('task-' + task.id);
     if (cb) cb.focus();
+
+    // Stempel 済 pas tugas terakhir yang deadline-nya hari ini baru aja beres
+    const today = toDateStr(new Date());
+    const dueToday = tasks.filter(t => t.deadline === today);
+    const paper = document.getElementById('task-paper');
+    const allDone = dueToday.length > 0 && dueToday.every(t => t.completed);
+    if (!error && task.completed && task.deadline === today && allDone && window.Motion) Motion.stampHanko(paper);
+    if (!allDone) { const seal = paper && paper.querySelector(':scope > .hanko-seal'); if (seal) seal.remove(); }
 }
 
 function deleteTask(id) {
@@ -295,6 +306,14 @@ window.onModalClose = function(modalId) {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    onAction('daily-schedule-list', {
+        'schedule-edit': id => editSchedule(id),
+        'schedule-delete': id => deleteSchedule(id)
+    });
+    onAction('task-list', {
+        'task-toggle': id => toggleTask(id),
+        'task-delete': id => deleteTask(id)
+    });
     loadCalendar();
     showLoading('upcoming-list');
     showLoading('task-list');

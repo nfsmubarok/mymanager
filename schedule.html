@@ -65,34 +65,36 @@
             <button type="button" class="btn-add" onclick="openModal('scheduleModal')">+ Tambah jadwal</button>
         </header>
 
-        <div class="content-grid">
-            <section class="box" aria-labelledby="month-display">
-                <div class="calendar-header-nav">
-                    <h2 id="month-display" aria-live="polite">Kalender</h2>
-                    <div>
-                        <button type="button" class="nav-btn" onclick="changeMonth(-1)" aria-label="Bulan sebelumnya"><span aria-hidden="true">‹</span></button>
-                        <button type="button" class="nav-btn" onclick="changeMonth(1)" aria-label="Bulan berikutnya"><span aria-hidden="true">›</span></button>
+        <div class="sched-grid">
+            <!-- Kalender: lembar kertas besar, fokus utama halaman -->
+            <section class="paper cal-paper" aria-labelledby="month-display">
+                <div class="cal-head">
+                    <h2 id="month-display" class="cal-month" aria-live="polite">Kalender</h2>
+                    <div class="cal-nav">
+                        <button type="button" class="tool-btn" onclick="changeMonth(-1)" aria-label="Bulan sebelumnya" data-tip="Bulan sebelumnya"><span aria-hidden="true">‹</span></button>
+                        <button type="button" class="tool-btn" onclick="changeMonth(1)" aria-label="Bulan berikutnya" data-tip="Bulan berikutnya"><span aria-hidden="true">›</span></button>
                     </div>
                 </div>
-                <div class="calendar-grid" aria-hidden="true">
+                <div class="calendar-grid day-names" aria-hidden="true">
                     <div class="day-name">Min</div><div class="day-name">Sen</div><div class="day-name">Sel</div>
                     <div class="day-name">Rab</div><div class="day-name">Kam</div><div class="day-name">Jum</div><div class="day-name">Sab</div>
                 </div>
                 <div class="calendar-grid" id="calendar-days"></div>
             </section>
 
-            <div class="stack">
-                <section class="box" aria-labelledby="today-heading">
-                    <div class="box-header"><h2 id="today-heading">Jadwal hari ini</h2></div>
+            <div class="sched-side">
+                <!-- Hari ini: tanpa kartu, cuma garis tinta di kiri -->
+                <section class="today-note" aria-labelledby="today-heading">
+                    <h2 id="today-heading">Hari ini</h2>
                     <div id="upcoming-list"></div>
                 </section>
 
-                <section class="box" aria-labelledby="task-heading">
-                    <div class="box-header">
-                        <h2 id="task-heading">Daftar tugas</h2>
+                <section class="paper" id="task-paper" aria-labelledby="task-heading">
+                    <div class="paper-head">
+                        <h2 id="task-heading">Tugas</h2>
                         <button type="button" class="btn-small" onclick="openModal('taskModal')">+ Tugas</button>
                     </div>
-                    <div id="task-list"></div>
+                    <div id="task-list" class="ledger"></div>
                 </section>
             </div>
         </div>
