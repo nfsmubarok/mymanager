@@ -30,7 +30,7 @@
     }
 
     // Update label + ikon sebuah tombol tool (desktop dan versi HP)
-    function setTool(id, { icon, label }) {
+    function setTool(id, { icon, label, tip }) {
         [id, id + '-m'].forEach(bid => {
             const b = document.getElementById(bid);
             if (!b) return;
@@ -39,6 +39,7 @@
                 b.setAttribute('aria-label', label);
                 if (b.dataset.tip !== undefined) b.dataset.tip = label;
             }
+            if (tip && b.dataset.tip !== undefined) b.dataset.tip = tip;
         });
     }
     function onTool(id, handler) {
@@ -63,8 +64,9 @@
             onTool('btn-theme', b => Theme.toggle(b));
         }
         if (window.Motion) {
+            // Label tetap + aria-pressed (state dibaca sekali). Tooltip yang nunjukin status buat mata.
             const syncMotion = () => {
-                setTool('btn-motion', { label: Motion.full ? 'Gerak: penuh' : 'Gerak: hemat' });
+                setTool('btn-motion', { label: 'Gerak penuh', tip: Motion.full ? 'Gerak: penuh' : 'Gerak: hemat' });
                 ['btn-motion', 'btn-motion-m'].forEach(id => { const b = document.getElementById(id); if (b) b.setAttribute('aria-pressed', String(Motion.full)); });
             };
             syncMotion();
@@ -73,8 +75,8 @@
         }
         if (window.Petals) {
             const syncPetals = () => {
-                setTool('btn-petals', { label: Petals.paused ? 'Putar kelopak' : 'Jeda kelopak' });
-                ['btn-petals', 'btn-petals-m'].forEach(id => { const b = document.getElementById(id); if (b) b.setAttribute('aria-pressed', String(Petals.paused)); });
+                setTool('btn-petals', { label: 'Kelopak sakura', tip: Petals.paused ? 'Kelopak: dijeda' : 'Kelopak: jalan' });
+                ['btn-petals', 'btn-petals-m'].forEach(id => { const b = document.getElementById(id); if (b) b.setAttribute('aria-pressed', String(!Petals.paused)); });
             };
             syncPetals();
             document.addEventListener('petals:change', syncPetals);

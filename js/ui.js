@@ -109,8 +109,8 @@ function updateDashboard() {
     const animate = firstPaint;
     updateCurrentBalanceDisplay(animate);
     setAmount('display-total-savings', totalSavings, formatRp, animate);
-    setAmount('display-total-income', totalIncome, n => '+' + formatRp(n), animate);
-    setAmount('display-total-expense', totalExpense, n => '-' + formatRp(n), animate);
+    setAmount('display-total-income', totalIncome, n => (n ? '+' : '') + formatRp(n), animate);
+    setAmount('display-total-expense', totalExpense, n => (n ? '-' : '') + formatRp(n), animate);
     const net = totalIncome - totalExpense;
     setAmount('display-net', net, n => (net > 0 ? '+' : '') + formatRp(n), animate);
     const netEl = document.getElementById('display-net');
@@ -196,7 +196,7 @@ function renderWallets() {
             </div>
             <div class="ledger-side">
                 <p class="amount">${formatRp(w.realBalance)}</p>
-                <button type="button" class="btn-text danger" onclick="deleteWallet('${esc(w.id)}')" aria-label="Hapus dompet ${esc(w.name)}">Hapus</button>
+                <button type="button" class="btn-text danger" data-action="wallet-delete" data-id="${esc(w.id)}" aria-label="Hapus dompet ${esc(w.name)}">Hapus</button>
             </div>
         </div>`).join('');
 }
@@ -257,8 +257,8 @@ function renderAllTransactions() {
             <div class="ledger-side">
                 <p class="amount ${txColorClass(tx.type)}">${txSign(tx.type)}${formatRp(tx.amount)}</p>
                 <div class="row-actions">
-                    <button type="button" class="btn-text" onclick="editTransaction('${esc(tx.id)}')" aria-label="Edit ${esc(tx.desc)}">Edit</button>
-                    <button type="button" class="btn-text danger" onclick="triggerDeleteTx('${esc(tx.id)}')" aria-label="Hapus ${esc(tx.desc)}">Hapus</button>
+                    <button type="button" class="btn-text" data-action="tx-edit" data-id="${esc(tx.id)}" aria-label="Edit ${esc(tx.desc)}">Edit</button>
+                    <button type="button" class="btn-text danger" data-action="tx-delete" data-id="${esc(tx.id)}" aria-label="Hapus ${esc(tx.desc)}">Hapus</button>
                 </div>
             </div>
         </div>`;
@@ -322,5 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     showDashboardLoading();
     // Ganti mode: render ulang (tanpa animasi) supaya warna chart ikut token baru
     if (window.Theme) Theme.onChange(() => { if (!firstPaint) updateDashboard(); });
+    onAction('wallets-list', { 'wallet-delete': id => deleteWallet(id) });
+    onAction('all-tx-list', { 'tx-edit': id => editTransaction(id), 'tx-delete': id => triggerDeleteTx(id) });
     if (await requireAuth()) fetchCloudData();
 });

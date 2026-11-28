@@ -56,6 +56,7 @@
         t += 1;
         const breeze = Math.sin(t * 0.004) * 0.35 + 0.15;
         scrollWind *= 0.92;
+        mouse.vx *= 0.9; mouse.vy *= 0.9; // kursor diem = angin mereda
 
         for (let i = petals.length - 1; i >= 0; i--) {
             const p = petals[i];
@@ -119,7 +120,10 @@
             if (Math.abs(mouse.vy) > 60) mouse.vy = 0;
             mouse.x = e.clientX; mouse.y = e.clientY; mouse.t = now;
         }, { passive: true });
-        document.addEventListener('pointerleave', () => { mouse.x = mouse.y = -999; });
+        const away = () => { mouse.x = mouse.y = -999; mouse.vx = mouse.vy = 0; };
+        document.documentElement.addEventListener('mouseleave', away);
+        addEventListener('pointerout', e => { if (!e.relatedTarget) away(); });
+        addEventListener('blur', away);
         addEventListener('pointerdown', e => {
             if (!active() || (e.target.closest && e.target.closest(INTERACTIVE))) return;
             const x = e.clientX, y = e.clientY;

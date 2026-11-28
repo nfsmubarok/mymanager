@@ -41,6 +41,24 @@ function formatDate(dateStr) {
     return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// --- AKSI BARIS (delegasi) ---
+// Template nulis data-action + data-id, bukan handler onclick yang nyelipin id ke string JS.
+// ID ga pernah masuk ke string JS, jadi ID aneh ga bisa nyisipin script.
+function onAction(root, handlers) {
+    if (typeof root === 'string') root = document.getElementById(root);
+    if (!root) return;
+    const run = (e, isChange) => {
+        const el = e.target.closest && e.target.closest('[data-action]');
+        if (!el || !root.contains(el)) return;
+        const isBox = el.matches('input[type="checkbox"], input[type="radio"]');
+        if (isBox !== isChange) return;
+        const fn = handlers[el.dataset.action];
+        if (fn) fn(el.dataset.id, el, e);
+    };
+    root.addEventListener('click', e => run(e, false));
+    root.addEventListener('change', e => run(e, true));
+}
+
 // --- TOAST ---
 let toastTimer = null;
 function showToast(msg, isError = false) {

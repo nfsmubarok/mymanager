@@ -90,7 +90,14 @@
         modalIn(overlay, originEl) {
             const g = gs();
             const sheet = overlay.querySelector('.modal-content, .modal-sheet');
-            if (!g) return;
+            const old = overlay.querySelector(':scope > .ink-blot');
+            if (window.gsap) window.gsap.killTweensOf([sheet, old].filter(Boolean));
+            if (!g) {
+                // Gerak hemat: bersihin sisa noda tinta atau style dari animasi yang kepotong
+                if (old) { old.style.opacity = '0'; old.style.transform = 'scale(0)'; }
+                if (sheet) { sheet.style.opacity = ''; sheet.style.transform = ''; sheet.style.visibility = ''; }
+                return;
+            }
             const blot = blotFor(overlay);
             const r = originEl && originEl.getBoundingClientRect ? originEl.getBoundingClientRect() : null;
             const x = r ? r.left + r.width / 2 : innerWidth / 2;
@@ -108,6 +115,7 @@
             if (!g) return Promise.resolve();
             const sheet = overlay.querySelector('.modal-content, .modal-sheet');
             const blot = overlay.querySelector(':scope > .ink-blot');
+            g.killTweensOf([sheet, blot].filter(Boolean)); // hentiin modalIn yang mungkin masih jalan
             return new Promise(resolve => {
                 // Fallback: tab di background bikin rAF berhenti, modal tetap harus nutup
                 setTimeout(resolve, 400);
