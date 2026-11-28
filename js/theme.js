@@ -23,8 +23,29 @@
         },
         toggle(originEl) { return this.set(this.get() === 'sumi' ? 'washi' : 'sumi', originEl); },
         onChange(fn) { listeners.push(fn); },
-        // Diganti di Task 7 dengan efek tinta menyebar
-        _transition(next) { apply(next); return Promise.resolve(); },
+        // Tinta menyebar dari tombol: lingkaran clip-path lewat View Transitions API.
+        // Tanpa API atau pas gerak "hemat": ganti langsung.
+        _transition(next, originEl) {
+            const full = window.Motion ? Motion.full : false;
+            if (!full || typeof document.startViewTransition !== 'function') { apply(next); return Promise.resolve(); }
+
+            const r = originEl && originEl.getBoundingClientRect ? originEl.getBoundingClientRect() : null;
+            const x = r ? r.left + r.width / 2 : innerWidth - 40;
+            const y = r ? r.top + r.height / 2 : 40;
+            const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+            const toDark = next === 'sumi';
+            document.documentElement.dataset.inking = toDark ? 'in' : 'out';
+
+            const vt = document.startViewTransition(() => apply(next));
+            vt.ready.then(() => {
+                const small = `circle(0px at ${x}px ${y}px)`, big = `circle(${R}px at ${x}px ${y}px)`;
+                document.documentElement.animate(
+                    { clipPath: toDark ? [small, big] : [big, small] },
+                    { duration: 700, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'both', pseudoElement: toDark ? '::view-transition-new(root)' : '::view-transition-old(root)' }
+                );
+            }).catch(() => {});
+            return vt.finished.catch(() => {}).finally(() => { delete document.documentElement.dataset.inking; });
+        },
         _apply: apply
     };
 })();

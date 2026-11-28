@@ -350,3 +350,7 @@ fieldset.form-group { border: none; }
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
 html[data-motion="calm"]::view-transition-old(root), html[data-motion="calm"]::view-transition-new(root) { animation: none; }
+/* Ganti mode: animasi default dimatiin, lingkaran tinta diatur dari js/theme.js */
+html[data-inking]::view-transition-old(root), html[data-inking]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-inking="out"]::view-transition-old(root) { z-index: 2; }
+html[data-inking="in"]::view-transition-new(root) { z-index: 2; }
