@@ -452,6 +452,28 @@ button.day-cell:active { background: var(--line); }
 @media (max-width: 520px) { .rating-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .card-cover { height: 110px; font-size: 20px; } }
 @media (max-width: 767px) { .row-link { min-height: 44px; } }
 
+/* ---------- 14. Dumpspaces ---------- */
+/* Masonry pakai CSS columns: kartu tinggi beda-beda, kayak kertas yang ditumpuk */
+.masonry-grid { columns: 3 260px; column-gap: 20px; }
+.masonry-grid > .empty-state, .masonry-grid > .state { column-span: all; }
+.dump-card { break-inside: avoid; margin-bottom: 20px; padding: 0; overflow: hidden; display: block; }
+.dump-image { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: var(--ai-tint); }
+.dump-header { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line); }
+.dump-header .btn-text { margin-left: auto; }
+.dump-date { font-size: 12px; color: var(--muted); }
+.dump-body { padding: 14px 16px 16px; }
+.dump-title { font-size: 18px; margin-bottom: 6px; overflow-wrap: anywhere; }
+.dump-text { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.dump-text.long { border-left: 2px solid var(--line-strong); padding-left: 12px; }
+.dump-host { font-size: 12px; color: var(--muted); letter-spacing: .02em; margin-bottom: 4px; overflow-wrap: anywhere; }
+.dump-link { display: inline-flex; align-items: center; min-height: 36px; margin-top: 6px; font-weight: 700; color: var(--ai); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.dump-link:hover { color: var(--ink); }
+.dump-type-badge { font-size: 12px; font-weight: 700; padding: 0 7px; border-radius: 2px; line-height: 20px; }
+.type-note { background: var(--ai-tint); color: var(--ai); }
+.type-link { background: var(--line); color: var(--ink); }
+.type-image { background: var(--hanko-tint); color: var(--hanko); }
+@media (max-width: 767px) { .dump-link { min-height: 44px; } }
+
 /* ---------- 10. Login ---------- */
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .login-theme { position: fixed; top: 14px; right: 14px; z-index: 10; }
