@@ -59,7 +59,7 @@ function renderDumps() {
         }
 
         return `
-        <article class="paper dump-card kind-${type.toLowerCase()}">
+        <article class="paper dump-card">
             ${media}
             <div class="dump-header">
                 <span class="dump-type-badge ${cfg.badge}">${cfg.label}</span>

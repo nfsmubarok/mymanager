@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filterEl) filterEl.value = String(new Date().getMonth());
     showDashboardLoading();
     // Ganti mode: render ulang (tanpa animasi) supaya warna chart ikut token baru
-    if (window.Theme) Theme.onChange(() => { if (!firstPaint) updateDashboard(); });
+    if (window.Theme) Theme.onChange(() => { if (!firstPaint && lastFetchOk) updateDashboard(); });
     onAction('wallets-list', { 'wallet-delete': id => deleteWallet(id) });
     onAction('all-tx-list', { 'tx-edit': id => editTransaction(id), 'tx-delete': id => triggerDeleteTx(id) });
     if (await requireAuth()) fetchCloudData();
