@@ -71,6 +71,15 @@
             Motion.onChange(syncMotion);
             onTool('btn-motion', () => Motion.setFull(!Motion.full));
         }
+        if (window.Petals) {
+            const syncPetals = () => {
+                setTool('btn-petals', { label: Petals.paused ? 'Putar kelopak' : 'Jeda kelopak' });
+                ['btn-petals', 'btn-petals-m'].forEach(id => { const b = document.getElementById(id); if (b) b.setAttribute('aria-pressed', String(Petals.paused)); });
+            };
+            syncPetals();
+            document.addEventListener('petals:change', syncPetals);
+            onTool('btn-petals', () => Petals.setPaused(!Petals.paused));
+        }
         const m = document.getElementById('btn-logout-m');
         if (m && typeof logout === 'function') m.addEventListener('click', logout);
     });
