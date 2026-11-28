@@ -150,9 +150,21 @@ function renderUpcoming() {
         </div>`).join('');
 }
 
+// Stempel 済 di kertas tugas cuma boleh ada selama semua tugas hari ini beres.
+// Dipanggil tiap render, jadi nambah/hapus/centang tugas ga bisa ninggalin stempel basi.
+function syncTaskSeal() {
+    const paper = document.getElementById('task-paper');
+    const seal = paper && paper.querySelector(':scope > .hanko-seal');
+    if (!seal) return;
+    const today = toDateStr(new Date());
+    const dueToday = tasks.filter(t => t.deadline === today);
+    if (!(dueToday.length > 0 && dueToday.every(t => t.completed))) seal.remove();
+}
+
 function renderTasks() {
     const listDiv = document.getElementById('task-list');
     clearBusy(listDiv);
+    syncTaskSeal();
     if (tasks.length === 0) {
         listDiv.innerHTML = '<div class="empty-state">Ga ada tugas yang nunggu.</div>';
         return;
@@ -177,8 +189,13 @@ function renderTasks() {
     }).join('');
 }
 
+// Klik cepat dua kali (Edit A lalu Edit B) cuma boleh ngejalanin klik terakhir
+let dailyAction = 0;
+
 async function openAddFromDaily() {
+    const mine = ++dailyAction;
     await closeModal('dailyModal');
+    if (mine !== dailyAction) return;
     openModal('scheduleModal');
     if (selectedDateForNew) document.getElementById('sch-date').value = selectedDateForNew;
 }
@@ -186,7 +203,9 @@ async function openAddFromDaily() {
 async function editSchedule(id) {
     const sch = schedules.find(s => s.id == id);
     if (!sch) return;
+    const mine = ++dailyAction;
     await closeModal('dailyModal');
+    if (mine !== dailyAction) return;
     editingScheduleId = sch.id;
     openModal('scheduleModal');
     document.getElementById('schedule-modal-title').textContent = 'Edit jadwal';
@@ -273,7 +292,6 @@ async function toggleTask(id) {
     const paper = document.getElementById('task-paper');
     const allDone = dueToday.length > 0 && dueToday.every(t => t.completed);
     if (!error && task.completed && task.deadline === today && allDone && window.Motion) Motion.stampHanko(paper);
-    if (!allDone) { const seal = paper && paper.querySelector(':scope > .hanko-seal'); if (seal) seal.remove(); }
 }
 
 function deleteTask(id) {

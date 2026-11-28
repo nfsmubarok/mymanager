@@ -3,6 +3,14 @@
 (function () {
     const KEY = 'zen-theme';
     const listeners = [];
+    let inkRun = 0;
+
+    // Transisi antar halaman (@view-transition) bisa dibatalin browser kalau pindah halaman cepat.
+    // Tangkap promise-nya biar ga jadi error "Page already revealed" di console.
+    window.addEventListener('pagereveal', e => {
+        const vt = e.viewTransition;
+        if (vt) [vt.ready, vt.finished, vt.updateCallbackDone].forEach(p => p && p.catch(() => {}));
+    });
 
     function store(name) {
         try { localStorage.setItem(KEY, name); } catch (e) { /* storage diblok: tetap jalan buat sesi ini */ }
@@ -35,6 +43,7 @@
             const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
             const toDark = next === 'sumi';
             document.documentElement.dataset.inking = toDark ? 'in' : 'out';
+            const mine = ++inkRun; // cuma transisi terakhir yang boleh beresin flag tinta
 
             const vt = document.startViewTransition(() => apply(next));
             vt.updateCallbackDone.catch(() => {}); // transisi bisa dibatalin browser (misal pindah halaman), jangan jadi error
@@ -45,7 +54,7 @@
                     { duration: 700, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'both', pseudoElement: toDark ? '::view-transition-new(root)' : '::view-transition-old(root)' }
                 );
             }).catch(() => {});
-            return vt.finished.catch(() => {}).finally(() => { delete document.documentElement.dataset.inking; });
+            return vt.finished.catch(() => {}).finally(() => { if (mine === inkRun) delete document.documentElement.dataset.inking; });
         },
         _apply: apply
     };

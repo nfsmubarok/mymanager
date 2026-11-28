@@ -58,12 +58,14 @@
             const g = gs();
             if (!g) { el.textContent = format(value); return; }
             const o = { v: 0 };
-            el.__zenTween = g.to(o, { v: value, duration: 1.4, ease: 'power3.out', onUpdate: () => { el.textContent = format(Math.round(o.v)); }, onComplete: () => { el.textContent = format(value); el.__zenTween = null; } });
+            // aria-busy: screen reader nunggu angka final, ga ngebacain angka di tengah animasi
+            el.setAttribute('aria-busy', 'true');
+            el.__zenTween = g.to(o, { v: value, duration: 1.4, ease: 'power3.out', onUpdate: () => { el.textContent = format(Math.round(o.v)); }, onComplete: () => { el.textContent = format(value); el.__zenTween = null; el.setAttribute('aria-busy', 'false'); } });
         },
 
         // Hentiin count-up yang masih jalan (dipanggil sebelum nulis angka final)
         stop(el) {
-            if (el && el.__zenTween) { el.__zenTween.kill(); el.__zenTween = null; }
+            if (el && el.__zenTween) { el.__zenTween.kill(); el.__zenTween = null; el.setAttribute('aria-busy', 'false'); }
         },
 
         // Baris/kartu muncul berurutan

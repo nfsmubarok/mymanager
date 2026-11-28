@@ -3,6 +3,8 @@ var wallets = [];
 var transactions = [];
 var editingTxId = null;
 var editingTransferId = null;
+// Status fetch terakhir. Kalau gagal, render ulang (misal pas ganti tema) ga boleh nimpa pesan error pakai data lama.
+var lastFetchOk = false;
 
 // --- TARIK DATA (KHUSUS USER LOGIN) ---
 async function fetchCloudData() {
@@ -36,9 +38,11 @@ async function fetchCloudData() {
             note: t.note || ''
         }));
 
+        lastFetchOk = true;
         updateDashboard();
     } catch (err) {
         console.error('Fetch error:', err);
+        lastFetchOk = false;
         showDashboardError();
     }
 }

@@ -529,6 +529,8 @@ button.day-cell:active { background: var(--line); }
     font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1;
     transform: rotate(-8deg); opacity: 0;
 }
+/* Kertas yang distempel dapet ruang di bawah, biar stempel ga nutupin baris terakhir */
+#task-paper:has(> .hanko-seal), .wish-card:has(> .hanko-seal), #sudoku-paper:has(> .hanko-seal) { padding-bottom: 96px; }
 .ink-blot { position: fixed; border-radius: 50%; background: var(--ai); opacity: 0; pointer-events: none; z-index: 0; filter: blur(2px); }
 .modal-overlay .ink-blot { background: color-mix(in srgb, var(--ai) 22%, transparent); }
 
