@@ -335,6 +335,31 @@ fieldset.form-group { border: none; }
     .paper { padding: 18px; }
 }
 
+/* ---------- 10. Login ---------- */
+.login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.login-theme { position: fixed; top: 14px; right: 14px; z-index: 10; }
+.login-sheet {
+    position: relative; width: 100%; max-width: 520px; display: grid; grid-template-columns: auto 1fr; gap: 28px;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 40px 40px 34px 30px; box-shadow: var(--shadow);
+}
+.login-logo {
+    writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: .34em;
+    color: var(--ai); border-right: 1px solid var(--line); padding-right: 22px; margin: 0;
+}
+.login-body h1 { font-size: 40px; }
+.login-body .subtitle { color: var(--muted); margin: 6px 0 24px; }
+.login-body .btn-primary { margin-top: 6px; }
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 18px 0; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.toggle-text { margin-top: 18px; color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.link-btn { background: none; border: none; color: var(--ai); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; min-height: 44px; padding: 0 6px; }
+.link-btn:hover { color: var(--ink); }
+@media (max-width: 520px) {
+    .login-sheet { grid-template-columns: 1fr; padding: 28px 22px; gap: 14px; }
+    .login-logo { writing-mode: horizontal-tb; border-right: none; border-bottom: 1px solid var(--line); padding: 0 0 12px; font-size: 20px; }
+    .login-body h1 { font-size: 34px; }
+}
+
 /* ---------- Gerak: stempel hanko + noda tinta modal ---------- */
 .hanko-seal {
     position: absolute; right: 18px; bottom: 16px; z-index: 2; pointer-events: none;

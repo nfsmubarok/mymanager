@@ -2,6 +2,8 @@ let isLoginMode = true;
 
 function renderMode() {
     document.getElementById('btn-submit').textContent = isLoginMode ? 'Masuk' : 'Bikin akun';
+    const title = document.getElementById('form-title');
+    if (title) title.textContent = isLoginMode ? 'Masuk' : 'Daftar';
     document.getElementById('form-subtitle').textContent = isLoginMode
         ? 'Selamat datang lagi. Masuk dulu, ya.'
         : 'Bikin akun baru buat mulai nyatet.';

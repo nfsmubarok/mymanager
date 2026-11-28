@@ -4,44 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk · マネージャー</title>
+    <script>try{var t=localStorage.getItem('zen-theme');}catch(e){}document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'sumi':'washi');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&display=swap">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="css/zen.css">
 </head>
 <body class="login-page">
+    <button type="button" class="tool-btn login-theme" id="btn-theme" aria-label="Ganti ke mode malam"><svg aria-hidden="true"><use href="img/icons.svg#moon"/></svg></button>
 
-    <main class="login-box">
-        <h1>マネージャー</h1>
-        <p class="subtitle" id="form-subtitle">Selamat datang lagi. Masuk dulu, ya.</p>
+    <main class="login-sheet">
+        <p class="login-logo" lang="ja" aria-hidden="true">マネージャー</p>
+        <div class="login-body">
+            <h1 id="form-title">Masuk</h1>
+            <p class="subtitle" id="form-subtitle">Selamat datang lagi. Masuk dulu, ya.</p>
 
-        <form id="auth-form" novalidate>
-            <div class="form-group">
-                <label for="auth-email">Email</label>
-                <input type="email" id="auth-email" class="form-input" autocomplete="email" placeholder="kamu@email.com" required>
-            </div>
-            <div class="form-group">
-                <label for="auth-password">Password</label>
-                <input type="password" id="auth-password" class="form-input" autocomplete="current-password" required>
-            </div>
-            <button type="submit" class="btn-submit btn-secondary btn-block" id="btn-submit">Masuk</button>
-        </form>
+            <form id="auth-form" novalidate>
+                <div class="field">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" class="form-input" autocomplete="email" placeholder="kamu@email.com" required>
+                </div>
+                <div class="field">
+                    <label for="auth-password">Password</label>
+                    <input type="password" id="auth-password" class="form-input" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="btn-submit">Masuk</button>
+            </form>
 
-        <p class="divider">atau</p>
-        <button type="button" class="btn-submit btn-block" id="btn-demo">Coba akun demo</button>
-        <p class="form-hint">Akun demo dipakai bareng pengunjung lain, jadi jangan simpan data pribadi di sana.</p>
+            <p class="divider"><span>atau</span></p>
+            <button type="button" class="btn btn-outline btn-block" id="btn-demo">Coba akun demo</button>
+            <p class="form-hint">Akun demo dipakai bareng pengunjung lain, jadi jangan simpan data pribadi di sana.</p>
 
-        <p class="toggle-text">
-            <span id="toggle-label">Belum punya akun?</span>
-            <button type="button" class="link-btn" id="btn-toggle">Daftar</button>
-        </p>
+            <p class="toggle-text">
+                <span id="toggle-label">Belum punya akun?</span>
+                <button type="button" class="link-btn" id="btn-toggle">Daftar</button>
+            </p>
+        </div>
     </main>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/motion.js"></script>
     <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/shell.js"></script>
     <script src="js/login.js"></script>
 </body>
 </html>
